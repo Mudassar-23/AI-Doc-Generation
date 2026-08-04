@@ -18,6 +18,7 @@
 10. [REST API Reference](#rest-api-reference)
 11. [Generated Documentation](#generated-documentation)
 12. [Installation & Setup](#installation--setup)
+    - [Virtual Environment Setup](#virtual-environment-setup)
 13. [Configuration Reference](#configuration-reference)
 14. [Running the Platform](#running-the-platform)
 15. [Docker Deployment](#docker-deployment)
@@ -161,9 +162,11 @@ ai-documentation/
 ├── outputs/                          # Generated ZIP files (git-ignored)
 ├── tmp/                              # Temporary clone directories (git-ignored)
 ├── data/                             # SQLite database file (git-ignored)
+├── venv/                             # Python virtual environment (git-ignored)
 ├── docker-compose.yml                # Multi-service container setup
 ├── run_tests.py                      # Custom test runner (no pytest required)
 ├── pytest.ini                        # Pytest configuration
+├── requirements-dev.txt              # Dev dependencies (pytest, httpx + all above)
 ├── .env.example                      # Environment variable template
 └── README.md                         # This file
 ```
@@ -413,21 +416,67 @@ Plus an `index.json` manifest file listing all documents.
 - Git (must be on system `PATH`)
 - PostgreSQL (optional — SQLite is used automatically as fallback)
 
-### 1. Clone & Install
+### 1. Clone the Repository
 ```bash
 git clone <this-repo-url>
 cd ai-documentation
+```
 
-# Install backend dependencies
+### 2. Virtual Environment Setup
+
+It is strongly recommended to use a **virtual environment** to isolate project dependencies.
+
+#### Windows (PowerShell)
+```powershell
+# Create the virtual environment
+python -m venv venv
+
+# Activate the virtual environment
+.\venv\Scripts\Activate.ps1
+
+# (Alternative: Command Prompt)
+.\venv\Scripts\activate.bat
+```
+
+#### macOS / Linux
+```bash
+# Create the virtual environment
+python3 -m venv venv
+
+# Activate the virtual environment
+source venv/bin/activate
+```
+
+Your shell prompt will change to show `(venv)` when the environment is active.
+
+> **Tip**: To deactivate the virtual environment at any time, simply run `deactivate`.
+
+### 3. Install Dependencies
+
+With the virtual environment **activated**, install all dependencies at once using the combined dev requirements file:
+
+```bash
+# Install all dependencies (backend + runner + dev tools)
+pip install -r requirements-dev.txt
+```
+
+Or install them separately if you only need a specific component:
+
+```bash
+# Backend only
 pip install -r backend/requirements.txt
 
-# Install runner dependencies
+# Runner only
 pip install -r runner/requirements.txt
 ```
 
-### 2. Configure Environment
+### 4. Configure Environment
 ```bash
+# Windows
 copy .env.example .env
+
+# macOS / Linux
+cp .env.example .env
 ```
 Edit `.env` with your values (see [Configuration Reference](#configuration-reference)).
 
