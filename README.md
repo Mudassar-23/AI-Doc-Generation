@@ -9,17 +9,17 @@
 ---
 ## Interface 2
 
-![Login](frontend/2.png)
+![Log](frontend/2.png)
 ---
 
 ## Interface 3
 
-![Login](frontend/3.png)
+![inter](frontend/3.png)
 ---
 
 ## Interface 4
 
-![Login](frontend/4.png)
+![Last](frontend/4.png)
 ---
 
 ## 📋 Table of Contents
