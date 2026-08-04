@@ -3,6 +3,24 @@
 > **A production-grade, enterprise-ready platform that automatically clones a software repository, analyzes it with AI, and generates a professional, source-traced documentation bundle as a downloadable ZIP file.**
 
 ---
+## Website Interface 1
+
+![Login](frontend/1.png)
+---
+## Interface 2
+
+![Login](frontend/2.png)
+---
+
+## Interface 3
+
+![Login](frontend/3.png)
+---
+
+## Interface 4
+
+![Login](frontend/4.png)
+---
 
 ## 📋 Table of Contents
 
@@ -58,29 +76,29 @@ The platform runs a **FIFO (First-In, First-Out) background queue**, handles mul
 
 ```
 ╔═══════════════════════════════════════════════════════════════╗
-║              User Browser (frontend/)                        ║
-║   ai-docs-generator.html  │  CSS  │  JavaScript             ║
+║              User Browser (frontend/)                         ║
+║   ai-docs-generator.html  │  CSS  │  JavaScript               ║
 ╚══════════════════╦════════════════════════════════════════════╝
                    ║ HTTP Requests (REST API)
 ╔══════════════════╩════════════════════════════════════════════╗
-║              FastAPI Backend (backend/)                      ║
-║  routes/jobs.py  │  routes/health.py  │  routes/queue.py    ║
-║  services/       │  schemas.py        │  models.py           ║
+║              FastAPI Backend (backend/)                       ║
+║  routes/jobs.py  │  routes/health.py  │  routes/queue.py      ║
+║  services/       │  schemas.py        │  models.py            ║
 ╚══════════════════╦════════════════════════════════════════════╝
                    ║ SQLAlchemy ORM
 ╔══════════════════╩════════════════════════════════════════════╗
-║           Database (PostgreSQL / SQLite fallback)            ║
-║  tables: jobs │ job_progress │ job_logs                      ║
+║           Database (PostgreSQL / SQLite fallback)             ║
+║  tables: jobs │ job_progress │ job_logs                       ║
 ╚══════════════════╦════════════════════════════════════════════╝
                    ║ FIFO Polling Queue (every 2s)
 ╔══════════════════╩════════════════════════════════════════════╗
-║           Background Runner Daemon (runner/)                 ║
-║  stage_manager.py  →  7-stage pipeline                      ║
+║           Background Runner Daemon (runner/)                  ║
+║  stage_manager.py  →  7-stage pipeline                        ║
 ╚══════════════════╦════════════════════════════════════════════╝
                    ║ Provider Fallback Sequence
 ╔══════════════════╩════════════════════════════════════════════╗
-║           AI Provider System (runner/providers/)             ║
-║  [Abacus AI]  →  [Azure AI Foundry]  →  [Mock Provider]     ║
+║           AI Provider System (runner/providers/)              ║
+║  [Abacus AI]  →  [Azure AI Foundry]  →  [Mock Provider]       ║
 ╚═══════════════════════════════════════════════════════════════╝
 ```
 
