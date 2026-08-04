@@ -1,0 +1,60 @@
+"""
+Runner configuration — loaded from .env file.
+"""
+import os
+from dotenv import load_dotenv
+
+# Load .env from project root
+load_dotenv(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), '.env'))
+
+
+class RunnerConfig:
+    """Runner settings loaded from environment."""
+
+    # Database
+    DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://aidocs:password@localhost:5432/aidocs")
+    DATABASE_FALLBACK_URL = os.getenv("DATABASE_FALLBACK_URL", "sqlite:///./data/aidocs.db")
+
+    # Abacus AI
+    ABACUS_API_KEY = os.getenv("ABACUS_API_KEY", "")
+    ABACUS_DEPLOYMENT_TOKEN = os.getenv("ABACUS_DEPLOYMENT_TOKEN", "")
+    ABACUS_MODEL = os.getenv("ABACUS_MODEL", "claude-sonnet")
+
+    # Azure AI Foundry
+    AZURE_AI_ENDPOINT = os.getenv("AZURE_AI_ENDPOINT", "")
+    AZURE_AI_API_KEY = os.getenv("AZURE_AI_API_KEY", "")
+    AZURE_AI_DEPLOYMENT_NAME = os.getenv("AZURE_AI_DEPLOYMENT_NAME", "")
+    AZURE_AI_API_VERSION = os.getenv("AZURE_AI_API_VERSION", "2024-06-01")
+
+    # Default provider
+    DEFAULT_AI_PROVIDER = os.getenv("DEFAULT_AI_PROVIDER", "mock")
+
+    # Runner
+    POLL_INTERVAL = int(os.getenv("RUNNER_POLL_INTERVAL", "2"))
+    MAX_JOB_DURATION_MINUTES = int(os.getenv("MAX_JOB_DURATION_MINUTES", "30"))
+
+    # Paths
+    OUTPUT_DIR = os.getenv("OUTPUT_DIR", "./outputs")
+    TEMP_DIR = os.getenv("TEMP_DIR", "./tmp")
+    TEMPLATES_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "templates")
+
+    # Chunking
+    TARGET_CHUNK_TOKENS = 4000
+    MAX_CHUNK_TOKENS = 5000
+    MAX_FILE_TOKENS = 8000  # Token threshold for printing large file token warning
+    TOKEN_CHAR_RATIO = 4  # ~4 chars per token
+
+    # File size filtering thresholds
+    MAX_FILE_SIZE_SKIP_BYTES = 3 * 1024 * 1024  # 3 MB -> hard skip threshold
+    LARGE_FILE_CHUNK_BYTES = 700 * 1024          # 700 KB -> chunk internally
+
+    # For files > 3 MB that are identified as source code: cap subchunking at this
+    # many tokens. Files exceeding this cap after splitting are still skipped.
+    LARGE_SOURCE_FILE_MAX_TOKENS = int(os.getenv("LARGE_SOURCE_FILE_MAX_TOKENS", "40000"))
+
+    # Retry
+    MAX_LLM_RETRIES = 3
+    RETRY_BASE_DELAY = 2  # seconds
+
+    # Mock
+    MOCK_DELAY = float(os.getenv("MOCK_DELAY", "0.5"))

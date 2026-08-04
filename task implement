@@ -1,0 +1,50 @@
+# AI Documentation Platform — Task Tracker
+
+## Phase 1: Foundation
+- [ ] Create `.env.example` with all config keys
+- [ ] Create `.gitignore`
+
+## Phase 2: Database
+- [ ] `database/init_db.py` — create tables (PostgreSQL + SQLite fallback)
+
+## Phase 3: Backend (FastAPI)
+- [ ] `backend/requirements.txt`
+- [ ] `backend/config.py` — settings from `.env`
+- [ ] `backend/database.py` — PostgreSQL + SQLite fallback
+- [ ] `backend/models.py` — SQLAlchemy ORM (3 tables)
+- [ ] `backend/schemas.py` — Pydantic models
+- [ ] `backend/routes/health.py`
+- [ ] `backend/routes/jobs.py`
+- [ ] `backend/routes/queue.py`
+- [ ] `backend/services/job_service.py`
+- [ ] `backend/services/queue_service.py`
+- [ ] `backend/main.py` — FastAPI app
+
+## Phase 4: Runner
+- [ ] `runner/requirements.txt`
+- [ ] `runner/config.py`
+- [ ] `runner/prompts.py` — professional LLM prompts
+- [ ] `runner/providers/base.py` — abstract AI provider
+- [ ] `runner/providers/mock_provider.py`
+- [ ] `runner/providers/abacus_provider.py`
+- [ ] `runner/providers/azure_ai_provider.py`
+- [ ] `runner/analysis/file_filter.py`
+- [ ] `runner/analysis/file_categorizer.py`
+- [ ] `runner/analysis/chunk_builder.py`
+- [ ] `runner/analysis/context_builder.py`
+- [ ] `runner/stages/s1_clone.py`
+- [ ] `runner/stages/s2_analyze.py`
+- [ ] `runner/stages/s3_chunk.py`
+- [ ] `runner/stages/s4_llm_analyze.py`
+- [ ] `runner/stages/s5_context_build.py`
+- [ ] `runner/stages/s6_template_fill.py`
+- [ ] `runner/stages/s7_package.py`
+- [ ] `runner/stage_manager.py`
+- [ ] `runner/main.py` — entry point
+
+## Phase 5: Frontend
+- [ ] Refactor `frontend/ai-docs-generator.html` — REST API calls, provider selection, queue display
+
+## Phase 6: Docker & Root
+- [ ] `docker-compose.yml`
+- [ ] `README.md`

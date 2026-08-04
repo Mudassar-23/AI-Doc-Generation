@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Docs Generator</title>
+<meta name="description" content="AI-powered documentation generation from GitHub and Azure DevOps repositories. Generate professional docs automatically.">
+<!-- Favicon -->
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>✨</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/ai-docs-generator.css?v=1.0.1">
+</head>
+<body>
+<div class="wrap">
+
+  <div class="brand">
+    <div class="brand-mark" title="AI Docs Generator">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M12 2L13.8 8.2L20 10L13.8 11.8L12 18L10.2 11.8L4 10L10.2 8.2L12 2Z" fill="#ffdf7d"/>
+        <path d="M19 14L19.7 16.3L22 17L19.7 17.7L19 20L18.3 17.7L16 17L18.3 16.3L19 14Z" fill="#ffffff"/>
+        <path d="M6 14L6.4 15.6L8 16L6.4 16.4L6 18L5.6 16.4L4 16L5.6 15.6L6 14Z" fill="#a79bfd"/>
+      </svg>
+    </div>
+    <div class="brand-text">
+      <h1>AI Docs Generator</h1>
+      <p>Repo-first documentation, generated live</p>
+    </div>
+  </div>
+
+  <!-- SCREEN 1: NAME -->
+  <div class="screen active" id="screen-name">
+    <p class="eyebrow">Step 1</p>
+    <h2 class="title">What are we documenting?</h2>
+    <p class="sub">Give this run a project name. You'll connect a repository next.</p>
+    <div class="panel">
+      <div class="field">
+        <label>Project name</label>
+        <input type="text" id="projectName" placeholder="e.g. Payments Service, Order API, Internal CRM">
+      </div>
+      <button class="btn btn-primary btn-block" id="toConnect" style="margin-top:6px;">Next →</button>
+    </div>
+  </div>
+
+  <!-- SCREEN 2: CONNECT -->
+  <div class="screen" id="screen-connect">
+    <div class="top-actions">
+      <span class="back-link" onclick="goTo('screen-name')">← back</span>
+    </div>
+    <p class="eyebrow">Step 2</p>
+    <h2 class="title" id="connectTitle">Connect a repository</h2>
+    <p class="sub">Paste a public repo URL to get started.</p>
+
+    <div class="panel">
+      <div class="tabs">
+        <div class="tab active" id="tab-github" onclick="setSource('github')">
+          <strong>GitHub</strong>
+          <span>github.com/owner/repo</span>
+        </div>
+        <div class="tab" id="tab-azure" onclick="setSource('azure')">
+          <strong>Azure DevOps</strong>
+          <span>dev.azure.com/org/project/_git/repo</span>
+        </div>
+      </div>
+
+      <div class="field">
+        <label id="urlLabel">Repository URL</label>
+        <input type="url" id="repoUrl" placeholder="https://github.com/owner/repo">
+      </div>
+
+      <div class="field" style="margin-top:16px;">
+        <label>Personal Access Token (PAT) <span style="text-transform:none;opacity:0.65;font-size:10px;letter-spacing:0.5px;">(Optional — for private repos / fast cloning)</span></label>
+        <input type="password" id="patToken" placeholder="e.g. ghp_xxxxxxxxxxxxxxxxxxxx or Azure PAT">
+        <div class="hint">Fast-tracks repository cloning and grants access to private repositories.</div>
+      </div>
+
+      <button class="btn btn-primary btn-block" id="startPipeline" style="margin-top:22px;">Start generation →</button>
+      <div class="hint" id="connectError" style="color:var(--bad);display:none;margin-top:12px;"></div>
+    </div>
+  </div>
+
+  <!-- SCREEN 3: PIPELINE -->
+  <div class="screen" id="screen-pipeline">
+    <p class="eyebrow" id="pipelineEyebrow">Step 3 · Running</p>
+    <h2 class="title" id="pipelineTitle">Generating documentation…</h2>
+    <p class="sub" id="pipelineSub">Cloning repository, analyzing code in chunks, then filling templates with AI.</p>
+
+    <div class="pipeline-layout">
+
+      <div class="side-panel side-panel-left">
+        <div class="side-card">
+          <h4>Run Info</h4>
+          <div class="info-row"><span class="k2">Project</span><span class="v2" id="infoProject">—</span></div>
+          <div class="info-row"><span class="k2">Source</span><span class="v2" id="infoSource">—</span></div>
+          <div class="info-row"><span class="k2">Elapsed</span><span class="v2" id="infoElapsed">00:00</span></div>
+        </div>
+        <div class="side-card">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+            <h4 style="margin:0;">Live Queue</h4>
+            <span style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--text-faint);" id="queueCount">—</span>
+          </div>
+          <div id="liveQueueList"></div>
+        </div>
+        <div class="side-card">
+          <h4>How It Works</h4>
+          <div class="tip-item">Repository is cloned and analyzed in small chunks — not sent all at once.</div>
+          <div class="tip-item">Each chunk is analyzed independently by the AI for structured knowledge extraction.</div>
+          <div class="tip-item">The knowledge is consolidated, then used to fill professional documentation templates.</div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="step-list" id="stepList"></div>
+        <div class="log" id="logBox"></div>
+        <div id="retryWrap" style="display:none;margin-top:18px;">
+          <button class="btn btn-ghost" id="retryBtn">Retry failed job</button>
+        </div>
+      </div>
+
+      <div class="side-panel side-panel-right">
+        <div class="side-card">
+          <h4>Live Stats</h4>
+          <div class="info-row"><span class="k2">Status</span><span class="v2" id="statStatus">—</span></div>
+          <div class="info-row"><span class="k2">Stage</span><span class="v2" id="statStage">—</span></div>
+          <div class="info-row"><span class="k2">Progress</span><span class="v2" id="statProgress">0%</span></div>
+
+          <!-- Token usage section — hidden until data arrives -->
+          <div id="tokenSection" style="display:none;margin-top:14px;border-top:1px solid var(--border-soft);padding-top:12px;">
+            <div class="tok-header">Token Usage</div>
+            <div class="tok-group">
+              <div class="tok-label">Chunks Analysis</div>
+              <div class="info-row tok-row"><span class="k2">Total tokens</span><span class="v2 tok-val" id="tokChunksTotal">—</span></div>
+              <div class="info-row tok-row"><span class="k2">Num chunks</span><span class="v2 tok-val" id="tokNumChunks">—</span></div>
+            </div>
+            <div class="tok-group">
+              <div class="tok-label">Template Generation</div>
+              <div class="info-row tok-row"><span class="k2">Input</span><span class="v2 tok-val tok-in" id="tokTmplIn">—</span></div>
+              <div class="info-row tok-row"><span class="k2">Output</span><span class="v2 tok-val tok-out" id="tokTmplOut">—</span></div>
+              <div class="info-row tok-row"><span class="k2">Total</span><span class="v2 tok-val" id="tokTmplTotal">—</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+
+  <!-- SCREEN 4: RESULTS -->
+  <div class="screen" id="screen-results">
+    <p class="eyebrow">Step 4 · Complete</p>
+    <h2 class="title">Documentation is ready</h2>
+    <p class="sub" id="resultsSub">All files were generated from live repository context.</p>
+
+    <div class="pillbar" id="pillbar"></div>
+
+    <div class="panel">
+      <div id="fileList"></div>
+    </div>
+
+    <div style="display:flex;gap:12px;margin-top:20px;">
+      <button class="btn btn-primary" id="downloadZip">⬇ Download ZIP</button>
+      <button class="btn btn-ghost" onclick="resetAll()">Start over</button>
+    </div>
+    <p class="footnote">Files: <code class="k">PRD.md</code> <code class="k">Architecture-Design.md</code> <code class="k">Database-Design.md</code> <code class="k">API-Specification.md</code> <code class="k">Deployment-Guide.md</code> <code class="k">Run-Locally.md</code> <code class="k">Stack-and-Techniques.md</code> <code class="k">Review-and-TODO.md</code> <code class="k">index.json</code></p>
+  </div>
+
+</div>
+
+<script src="js/ai-docs-generator.js?v=1.0.1"></script>
+</body>
+</html>
