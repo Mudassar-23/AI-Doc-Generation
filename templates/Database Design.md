@@ -36,20 +36,7 @@ erDiagram
     ORDER ||--o{ ORDER_BACKUP : "shadow/backup copy"
     ORDER ||--o{ ORDER_EXPORT_HISTORY : "export audit trail"
 ```
-## Attribute-level Entity  
-```mermaid
-erDiagram
-    JOB {
-        string id PK
-        string repo_url
-        string status
-        int queue_position
-        int current_pass
-        datetime created_at
-        text error
-        text output_path
-    }
-```
+
 ## 3. Physical Schema
 {{#EACH tables}}
 ### 3.{{INDEX}} `{{TABLE_NAME}}`
