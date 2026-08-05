@@ -47,8 +47,13 @@ class Settings(BaseSettings):
     azure_ai_deployment_name: str = os.getenv("AZURE_AI_DEPLOYMENT_NAME", "")
     azure_ai_api_version: str = os.getenv("AZURE_AI_API_VERSION", "2024-06-01")
 
+    # Azure DevOps / GitHub Credentials
+    ado_pat: str = get_secret("ADO_PAT", get_secret("AZURE_DEVOPS_PAT", ""))
+    ado_organization_url: str = os.getenv("ADO_ORGANIZATION_URL", os.getenv("AZURE_DEVOPS_ORG_URL", ""))
+    github_pat: str = get_secret("GITHUB_PAT", "")
+
     # Default AI Provider
-    default_ai_provider: str = os.getenv("DEFAULT_AI_PROVIDER", "mock")
+    default_ai_provider: str = os.getenv("DEFAULT_AI_PROVIDER", "azure_ai")
 
     # Security & CORS
     allowed_cors_origins: str = os.getenv("ALLOWED_CORS_ORIGINS", "http://localhost:8000,http://127.0.0.1:8000,http://localhost:3000")
@@ -72,10 +77,15 @@ class Settings(BaseSettings):
             return ["*"]
         return [origin.strip() for origin in self.allowed_cors_origins.split(",") if origin.strip()]
 
+    # Azure OpenAI Embeddings
+    azure_embedding_endpoint: str = os.getenv("AZURE_EMBEDDING_ENDPOINT", "")
+    azure_embedding_deployment: str = os.getenv("AZURE_EMBEDDING_DEPLOYMENT", "text-embedding-ada-002")
+
     class Config:
         env_file = ".env"
         env_file_encoding = "utf-8"
         case_sensitive = False
+        extra = "ignore"
 
 
 # Singleton settings instance

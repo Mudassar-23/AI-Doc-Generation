@@ -3,24 +3,6 @@
 > **A production-grade, enterprise-ready platform that automatically clones a software repository, analyzes it with AI, and generates a professional, source-traced documentation bundle as a downloadable ZIP file.**
 
 ---
-## Website Interface 1
-
-![Login](frontend/1.png)
----
-## Interface 2
-
-![Log](frontend/2.png)
----
-
-## Interface 3
-
-![inter](frontend/3.png)
----
-
-## Interface 4
-
-![Last](frontend/4.png)
----
 
 ## 📋 Table of Contents
 
@@ -30,26 +12,29 @@
 4. [Project Structure](#project-structure)
 5. [Technology Stack](#technology-stack)
 6. [AI Provider System](#ai-provider-system)
-7. [The 7-Stage Pipeline](#the-7-stage-pipeline)
-8. [Token Calculation & Chunking](#token-calculation--chunking)
-9. [Database Models](#database-models)
-10. [REST API Reference](#rest-api-reference)
-11. [Generated Documentation](#generated-documentation)
-12. [Installation & Setup](#installation--setup)
+7. [The Pipeline (8 Stages)](#the-pipeline-8-stages)
+8. [RAG-Enhanced Document Generation](#rag-enhanced-document-generation)
+9. [Token Calculation & Chunking](#token-calculation--chunking)
+10. [Database Models](#database-models)
+11. [REST API Reference](#rest-api-reference)
+12. [Generated Documentation](#generated-documentation)
+13. [Installation & Setup](#installation--setup)
     - [Virtual Environment Setup](#virtual-environment-setup)
-13. [Configuration Reference](#configuration-reference)
-14. [Running the Platform](#running-the-platform)
-15. [Docker Deployment](#docker-deployment)
-16. [Running Tests](#running-tests)
-17. [Troubleshooting](#troubleshooting)
+14. [Configuration Reference](#configuration-reference)
+15. [Running the Platform](#running-the-platform)
+16. [Docker Deployment](#docker-deployment)
+17. [Running Tests](#running-tests)
+18. [Troubleshooting](#troubleshooting)
 
 ---
 
 ## Overview
 
-The AI Documentation Generation Platform automates the creation of professional software documentation from any GitHub or Azure DevOps repository. Simply paste a repository URL (with optional Personal Access Token for private repos), select an AI provider, and the system runs a 7-stage automated pipeline to produce 8 structured markdown documents — all packaged into a ZIP file ready for download.
+The AI Documentation Generation Platform automates the creation of professional software documentation from any GitHub or Azure DevOps repository. Simply paste a repository URL (with optional Personal Access Token for private repos), select an AI provider, and the system runs a **8-stage automated pipeline** to produce 6 structured markdown documents — all packaged into a ZIP file ready for download.
 
 The platform runs a **FIFO (First-In, First-Out) background queue**, handles multiple concurrent user requests gracefully, and intelligently chunks repositories into semantic groups before passing them to an AI model — preventing context window overflows while maintaining source traceability throughout.
+
+**New in the latest release:** The pipeline now includes **Stage 3.5 — Vector Embeddings (RAG)**, which uses Azure OpenAI Embeddings to index all semantic chunks into a cosine similarity vector store. During document generation (Stage 6), each template retrieves its top-8 most relevant raw code snippets — giving the LLM precise source evidence alongside the consolidated structured context for higher-accuracy output.
 
 ---
 
@@ -58,7 +43,8 @@ The platform runs a **FIFO (First-In, First-Out) background queue**, handles mul
 | Feature | Details |
 | :--- | :--- |
 | 🤖 **Dynamic AI Fallback** | Abacus AI → Azure AI Foundry → Mock Provider (automatic cascade) |
-| 📦 **7-Stage Pipeline** | Clone → Analyze → Chunk → LLM → Context → Fill Templates → ZIP |
+| 📦 **8-Stage Pipeline** | Clone → Analyze → Chunk → **Embed (RAG)** → LLM → Context → Fill Templates → ZIP |
+| 🔎 **RAG-Enhanced Generation** | Per-template semantic chunk retrieval using Azure OpenAI Embeddings + cosine similarity |
 | 🔗 **Repo Support** | GitHub (PAT) and Azure DevOps (PAT) |
 | 🧩 **Semantic Chunking** | Groups files by category, targeting ~4,000 tokens per LLM call |
 | 📊 **Live Token Stats UI** | Live Stats panel shows chunk tokens and template input/output tokens in real time |
@@ -67,6 +53,8 @@ The platform runs a **FIFO (First-In, First-Out) background queue**, handles mul
 | 📂 **Source Traceability** | Every documented fact is tied back to a specific file path |
 | 🗄️ **Dual Database** | PostgreSQL for production, automatic SQLite fallback |
 | 🔒 **Windows File Safety** | Custom `safe_rmtree` handles `.git` read-only pack file locks on Windows |
+| 🔁 **Step Navigation** | Full `← back` / `next →` navigation across all 4 steps (Step 1 ↔ 2 ↔ 3 ↔ 4) |
+| 👁️ **Live Queue Switching** | Click any job in the Live Queue panel to view its real-time pipeline progress |
 | 🗑️ **Queue Dismiss** | Users can dismiss individual jobs from the Live Queue panel (frontend-only, no DB change) |
 | 🧪 **Test Suite** | End-to-end pipeline tests covering clone, fallback, and full document generation |
 
@@ -76,29 +64,39 @@ The platform runs a **FIFO (First-In, First-Out) background queue**, handles mul
 
 ```
 ╔═══════════════════════════════════════════════════════════════╗
-║              User Browser (frontend/)                         ║
-║   ai-docs-generator.html  │  CSS  │  JavaScript               ║
+║              User Browser (frontend/)                        ║
+║   ai-docs-generator.html  │  CSS  │  JavaScript             ║
+║   4-step wizard with ← back / next → navigation             ║
+║   Live Queue: click any job to switch pipeline view          ║
 ╚══════════════════╦════════════════════════════════════════════╝
                    ║ HTTP Requests (REST API)
 ╔══════════════════╩════════════════════════════════════════════╗
-║              FastAPI Backend (backend/)                       ║
-║  routes/jobs.py  │  routes/health.py  │  routes/queue.py      ║
-║  services/       │  schemas.py        │  models.py            ║
+║              FastAPI Backend (backend/)                      ║
+║  routes/jobs.py  │  routes/health.py  │  routes/queue.py    ║
+║  services/       │  schemas.py        │  models.py           ║
 ╚══════════════════╦════════════════════════════════════════════╝
                    ║ SQLAlchemy ORM
 ╔══════════════════╩════════════════════════════════════════════╗
-║           Database (PostgreSQL / SQLite fallback)             ║
-║  tables: jobs │ job_progress │ job_logs                       ║
+║           Database (PostgreSQL / SQLite fallback)            ║
+║  tables: jobs │ job_progress │ job_logs                      ║
 ╚══════════════════╦════════════════════════════════════════════╝
                    ║ FIFO Polling Queue (every 2s)
 ╔══════════════════╩════════════════════════════════════════════╗
-║           Background Runner Daemon (runner/)                  ║
-║  stage_manager.py  →  7-stage pipeline                        ║
+║           Background Runner Daemon (runner/)                 ║
+║  stage_manager.py  →  8-stage pipeline                      ║
+║  [Stage 3.5] AzureEmbedder → ChunkVectorStore (RAG index)   ║
 ╚══════════════════╦════════════════════════════════════════════╝
                    ║ Provider Fallback Sequence
 ╔══════════════════╩════════════════════════════════════════════╗
-║           AI Provider System (runner/providers/)              ║
-║  [Abacus AI]  →  [Azure AI Foundry]  →  [Mock Provider]       ║
+║           AI Provider System (runner/providers/)             ║
+║  [Abacus AI]  →  [Azure AI Foundry]  →  [Mock Provider]     ║
+╚═══════════════════════════════════════════════════════════════╝
+                   │
+                   ▼ Azure OpenAI Embeddings (Stage 3.5)
+╔═══════════════════════════════════════════════════════════════╗
+║  runner/analysis/embeddings.py  —  AzureEmbedder            ║
+║  runner/analysis/vector_store.py —  ChunkVectorStore         ║
+║  Pure-Python cosine similarity, zero external dependencies   ║
 ╚═══════════════════════════════════════════════════════════════╝
 ```
 
@@ -127,26 +125,28 @@ ai-documentation/
 │
 ├── runner/                           # Background pipeline daemon
 │   ├── main.py                       # FIFO polling loop, provider selection, job dispatch
-│   ├── config.py                     # RunnerConfig: env vars, chunking settings, paths
-│   ├── stage_manager.py              # Orchestrates all 7 stages for a single job
-│   ├── prompts.py                    # All LLM system + user prompts, TEMPLATE_CONTEXT_MAP
+│   ├── config.py                     # RunnerConfig: env vars, chunking settings, embedding config
+│   ├── stage_manager.py              # Orchestrates all 8 stages (incl. Stage 3.5 embeddings)
+│   ├── prompts.py                    # LLM prompts, TEMPLATE_CONTEXT_MAP, TEMPLATE_SEMANTIC_QUERIES
 │   ├── requirements.txt              # SQLAlchemy, openai, requests, tiktoken, gitpython
 │   ├── Dockerfile                    # Runner container image
 │   │
 │   ├── stages/                       # One file per pipeline stage
 │   │   ├── s1_clone.py               # Git clone w/ absolute paths & Windows-safe cleanup
 │   │   ├── s2_analyze.py             # File discovery, categorization, filtering
-│   │   ├── s3_chunk.py               # Semantic chunking + token estimation table
+│   │   ├── s3_chunk.py               # Semantic chunking + token estimation table (UNCHANGED)
 │   │   ├── s4_llm_analyze.py         # Per-chunk LLM JSON extraction
 │   │   ├── s5_context_build.py       # Merge chunk analyses into Structured Context
-│   │   ├── s6_template_fill.py       # Template loading + LLM fill + token stats table
+│   │   ├── s6_template_fill.py       # Template loading + LLM fill + RAG retrieval + token stats
 │   │   └── s7_package.py             # ZIP packaging + manifest
 │   │
 │   ├── analysis/                     # Standalone analysis utilities
 │   │   ├── file_filter.py            # .gitignore parser, DEFAULT_IGNORES, file discovery
 │   │   ├── file_categorizer.py       # Categorize files (Models, Controllers, CI/CD, etc.)
 │   │   ├── chunk_builder.py          # estimate_tokens(), build_chunks(), format_chunk_for_prompt()
-│   │   └── context_builder.py        # LLM-based consolidation of chunk analyses
+│   │   ├── context_builder.py        # LLM-based consolidation of chunk analyses
+│   │   ├── embeddings.py             # [NEW] AzureEmbedder — batch embedding via Azure OpenAI
+│   │   └── vector_store.py           # [NEW] ChunkVectorStore — pure-Python cosine similarity
 │   │
 │   ├── providers/                    # AI provider adapters
 │   │   ├── base.py                   # Abstract BaseProvider interface
@@ -159,22 +159,20 @@ ai-documentation/
 │       └── test_pipeline.py          # FallbackProvider, clone, and full pipeline tests
 │
 ├── frontend/                         # Single-page HTML/CSS/JS client
-│   ├── ai-docs-generator.html        # Main UI page
-│   ├── css/ai-docs-generator.css     # Styling
-│   ├── js/ai-docs-generator.js       # API polling, progress display, ZIP download
+│   ├── ai-docs-generator.html        # Main UI (4-step wizard with full back/next nav)
+│   ├── css/ai-docs-generator.css     # Styling (back-link, next-link, queue-row, active-job)
+│   ├── js/ai-docs-generator.js       # API polling, pipeline stepper, queue job switching
 │   ├── logo.png                      # Platform logo
 │   ├── favicon.svg                   # ✨ Sparkles favicon
 │   └── favicon.ico                   # Favicon fallback
 │
-├── templates/                        # 8 documentation templates (Markdown)
-│   ├── 00-README-How-To-Use.md       # Template usage guide
+├── templates/                        # 6 documentation templates (Markdown)
+│   ├── 00-README-How-To-Use.md       # Template usage guide & authoring contract
 │   ├── PRD.md
 │   ├── Architecture Design.md
 │   ├── Database Design.md
 │   ├── API Specification.md
 │   ├── Deployment Guide.md
-│   ├── Run Locally.md
-│   ├── Stack and Techniques.md
 │   └── Review and TODO.md
 │
 ├── outputs/                          # Generated ZIP files (git-ignored)
@@ -205,11 +203,12 @@ ai-documentation/
 ### Runner
 | Component | Technology |
 | :--- | :--- |
-| OpenAI SDK | `openai==1.58.1` (used for Azure AI Foundry) |
-| HTTP Client | `requests==2.32.3` (used for Abacus AI) |
+| OpenAI SDK | `openai==1.58.1` (Azure AI Foundry + Azure Embeddings) |
+| HTTP Client | `requests==2.32.3` (Abacus AI) |
 | Token estimation | `tiktoken==0.8.0` |
 | Git access | `gitpython==3.1.44` + subprocess `git` |
 | Config | `python-dotenv==1.0.1` |
+| Vector similarity | Pure Python stdlib (`math`) — zero extra deps |
 
 ### Frontend
 | Component | Technology |
@@ -242,9 +241,20 @@ The offline `MockProvider` provides realistic documentation output by parsing th
 
 ---
 
-## The 7-Stage Pipeline
+## The Pipeline (8 Stages)
 
-Each job submitted to the platform executes all 7 stages sequentially, orchestrated by [`runner/stage_manager.py`](file:///d:/AI%20Documentation/runner/stage_manager.py).
+Each job submitted to the platform executes all stages sequentially, orchestrated by [`runner/stage_manager.py`](file:///d:/AI%20Documentation/runner/stage_manager.py).
+
+```
+Stage 1  →  Clone Repository
+Stage 2  →  Analyze Codebase
+Stage 3  →  Build Semantic Chunks          ← unchanged
+Stage 3.5→  Compute Embeddings (RAG)       ← NEW — skipped gracefully if not configured
+Stage 4  →  AI Chunk Analysis (LLM)
+Stage 5  →  Build Structured Context
+Stage 6  →  Fill Templates (RAG-enhanced)  ← top-8 chunks retrieved per document
+Stage 7  →  Package ZIP
+```
 
 ### Stage 1 — Clone (`s1_clone.py`)
 - Constructs **absolute paths** for `temp_dir` and `repo_dir` to prevent Windows path nesting bugs.
@@ -277,6 +287,13 @@ Total Chunks: 7 | Total Estimated Tokens: 24945
 ============================================================
 ```
 
+### Stage 3.5 — Compute Embeddings [`runner/analysis/embeddings.py`] ⭐ NEW
+- Runs immediately after Stage 3 — **does not modify Stage 3's output**.
+- `AzureEmbedder` calls the Azure OpenAI Embeddings API (`text-embedding-ada-002` or any deployment) in batches of 16, with automatic retry on rate limits.
+- Each chunk dict receives an `"embedding"` key (a float vector).
+- `ChunkVectorStore` indexes all embedded chunks, pre-normalising vectors for O(n) cosine similarity at query time.
+- **Graceful degradation**: if `AZURE_EMBEDDING_ENDPOINT` / `AZURE_EMBEDDING_DEPLOYMENT` / `AZURE_AI_API_KEY` are missing or the API call fails, the stage is logged as skipped and the pipeline continues normally — Stage 6 falls back to the full structured-context approach without any crash.
+
 ### Stage 4 — LLM Analysis (`s4_llm_analyze.py`)
 - Sends each chunk to the LLM provider with a structured JSON extraction prompt.
 - Extracts: project summary, tech stack, architecture notes, database tables, API endpoints, authentication, configuration, dependencies, deployment notes, security observations, missing features, and source file paths.
@@ -287,20 +304,24 @@ Total Chunks: 7 | Total Estimated Tokens: 24945
 - Deduplicates merged tech stack entries, database tables, and API endpoints.
 - Retains source file traceability for every piece of knowledge.
 
-### Stage 6 — Template Filling (`s6_template_fill.py`)
+### Stage 6 — Template Filling (`s6_template_fill.py`) — RAG-enhanced
 - Loads each of the 8 template `.md` files from the `templates/` directory.
 - Maps relevant context sections to each template via `TEMPLATE_CONTEXT_MAP`.
-- Calls the LLM to replace `{PLACEHOLDER}` markers in each template with real information from the Structured Context.
+- **If vector store is built**: embeds a per-template semantic query (from `TEMPLATE_SEMANTIC_QUERIES`) and retrieves the top-8 most relevant raw code chunks; appends them as `## Relevant Code Snippets` in the prompt.
+- Calls the LLM to replace `{PLACEHOLDER}` markers in each template with real information.
 - Prints a full document generation token statistics table:
 ```text
 ============================================================
          DOCUMENT GENERATION & TOKEN STATISTICS
+         [RAG ACTIVE — semantic chunk retrieval enabled]
 ============================================================
+  [RAG] Architecture-Design.md: 8 chunks retrieved
+  [RAG] API-Specification.md: 8 chunks retrieved
+  ...
 Document: PRD.md                    | Input Tokens: 3764  | Output Tokens: 1355
-Document: Architecture-Design.md    | Input Tokens: 3468  | Output Tokens: 1197
-...
+Document: Architecture-Design.md    | Input Tokens: 4210  | Output Tokens: 1421
 ------------------------------------------------------------
-Total Templates: 8            | Total Input: 20826 | Total Output: 8684
+Total Templates: 8            | Total Input: 22918 | Total Output: 9140
 ============================================================
 ```
 
@@ -309,6 +330,57 @@ Total Templates: 8            | Total Input: 20826 | Total Output: 8684
 - Includes an `index.json` manifest listing all documents with their names and sizes.
 - Saves the ZIP to `./outputs/<project-name>-docs-job<id>.zip`.
 - Records the path in the database for download via API.
+
+---
+
+## RAG-Enhanced Document Generation
+
+The embedding system adds a **Retrieval-Augmented Generation (RAG)** layer to Stage 6 without replacing any existing pipeline components.
+
+### How It Works
+
+```
+Stage 3: chunks = [{category, file_paths, content, estimated_tokens}, ...]
+                        │
+Stage 3.5:   AzureEmbedder.embed_chunks(chunks)
+             → chunks[i]["embedding"] = [float, float, ...]   (1536-dim vector)
+             ChunkVectorStore.build(chunks)
+             → normalised vectors stored in memory
+                        │
+              (vector_store passed to Stage 6)
+                        │
+Stage 6:  for each template:
+             query = TEMPLATE_SEMANTIC_QUERIES[template_name]
+             query_vec = AzureEmbedder.embed_texts([query])
+             top_chunks = ChunkVectorStore.search(query_vec, top_k=8)
+             prompt += "## Relevant Code Snippets\n" + top_chunks
+             → LLM call with enriched prompt
+```
+
+### Per-Template Retrieval Queries
+
+| Document | Semantic Query Used |
+| :--- | :--- |
+| `PRD.md` | product requirements features business logic user stories goals |
+| `Architecture-Design.md` | system architecture components services modules layers data flow |
+| `Database-Design.md` | database models tables schemas ORM migrations SQL foreign key |
+| `API-Specification.md` | API routes endpoints controllers REST HTTP GET POST PUT DELETE |
+| `Deployment-Guide.md` | Docker Dockerfile docker-compose deployment CI CD pipeline Nginx |
+| `Run-Locally.md` | local development setup prerequisites install dependencies run start |
+| `Stack-and-Techniques.md` | tech stack frameworks libraries languages tools packages versions |
+| `Review-and-TODO.md` | TODO FIXME technical debt missing feature incomplete security vulnerability |
+
+### Configuration
+
+Add these to your `.env` (the API key is the same as `AZURE_AI_API_KEY`):
+
+```ini
+# Azure Embeddings — uses the same API key as AZURE_AI_API_KEY
+AZURE_EMBEDDING_ENDPOINT=https://your-resource.openai.azure.com/openai/v1
+AZURE_EMBEDDING_DEPLOYMENT=text-embedding-ada-002
+```
+
+Leave these blank to run without embeddings — the pipeline degrades gracefully.
 
 ---
 
@@ -372,7 +444,7 @@ A real repository with ~25,000 estimated input tokens (chunks) and ~9,000 output
 | `completed_at` | DateTime | Pipeline completion time |
 
 ### `job_progress` table
-Tracks per-stage progress (percent, message) for each of the 7 pipeline stages.
+Tracks per-stage progress (percent, message) for each of the **8 pipeline stages** (including `embedding`).
 
 ### `job_logs` table
 Stores all log entries (info, warn, error, debug) from the pipeline run for UI display.
@@ -385,7 +457,7 @@ Stores all log entries (info, warn, error, debug) from the pipeline run for UI d
 | :--- | :--- | :--- |
 | `POST` | `/api/jobs` | Submit a new job (repo URL + PAT + provider) |
 | `GET` | `/api/jobs/{id}` | Get full job status and metadata |
-| `GET` | `/api/jobs/{id}/progress` | Real-time 7-stage progress with percentages |
+| `GET` | `/api/jobs/{id}/progress` | Real-time 8-stage progress with percentages |
 | `GET` | `/api/jobs/{id}/download` | Stream the generated ZIP file |
 | `POST` | `/api/jobs/{id}/retry` | Re-queue a failed job |
 | `GET` | `/api/jobs/{id}/logs` | Get all log entries for a job |
@@ -410,20 +482,38 @@ POST /api/jobs
 
 ## Generated Documentation
 
-Each job produces 8 markdown documents inside the ZIP:
+Each job produces 6 markdown documents inside the ZIP:
 
 | File | Contents |
 | :--- | :--- |
 | `PRD.md` | Product Requirements: features, scope, user stories, acceptance criteria |
-| `Architecture-Design.md` | System architecture: components, data flow, Mermaid diagrams |
+| `Architecture-Design.md` | System architecture: components, data flow, tech stack, Mermaid diagrams |
 | `Database-Design.md` | Database tables, columns, relationships, ERD |
 | `API-Specification.md` | All endpoints, request/response schemas, auth methods |
-| `Deployment-Guide.md` | Docker, CI/CD, environment setup, production checklist |
-| `Run-Locally.md` | Local development setup: prerequisites, commands, env vars |
-| `Stack-and-Techniques.md` | Technology stack, frameworks, libraries, design patterns |
+| `Deployment-Guide.md` | Docker, CI/CD, local development setup, environment variables |
 | `Review-and-TODO.md` | Code quality, security findings, TODO items, technical debt |
 
 Plus an `index.json` manifest file listing all documents.
+
+---
+
+## Frontend — 4-Step Wizard
+
+The frontend is a single-page wizard with full bidirectional navigation:
+
+| Step | Screen | Left Action | Right Action |
+| :--- | :--- | :--- | :--- |
+| **Step 1** | Project Name | — | `Next →` button |
+| **Step 2** | Connect Repository | `← back` | `next →` |
+| **Step 3** | Pipeline (Live) | `← back` | `next →` |
+| **Step 4** | Results & Download | `← back` | — |
+
+### Live Queue — Job Switching
+On Step 3, the **Live Queue** side panel lists all active and recent jobs. Each job row shows:
+- An animated pulsing dot for running jobs
+- A `View` button to switch the entire pipeline monitor to that job's progress
+- A `×` dismiss button to hide it from the panel (frontend-only, no DB change)
+- The currently monitored job is highlighted with an `active-job` border and a `Viewing` tag
 
 ---
 
@@ -514,11 +604,16 @@ ABACUS_API_KEY=your-abacus-api-key-here
 ABACUS_DEPLOYMENT_TOKEN=your-deployment-token-here
 ABACUS_MODEL=claude-sonnet
 
-# ── Azure AI Foundry ─────────────────────────────────────────────
+# ── Azure AI Foundry (chat completions) ─────────────────────────
 AZURE_AI_ENDPOINT=https://your-resource.openai.azure.com/
 AZURE_AI_API_KEY=your-azure-api-key-here
 AZURE_AI_DEPLOYMENT_NAME=gpt-4o       # or gpt-5.4, etc.
 # AZURE_AI_API_VERSION=2024-06-01     # optional override
+
+# ── Azure OpenAI Embeddings (RAG — Stage 3.5) ───────────────────
+# Reuses AZURE_AI_API_KEY. Leave blank to disable RAG gracefully.
+AZURE_EMBEDDING_ENDPOINT=https://your-resource.openai.azure.com/openai/v1
+AZURE_EMBEDDING_DEPLOYMENT=text-embedding-ada-002
 
 # ── Default Provider ─────────────────────────────────────────────
 # Options: abacus | azure_ai | mock
@@ -542,7 +637,7 @@ HOST=0.0.0.0
 PORT=8000
 ```
 
-> **Tip**: Leave Abacus keys as placeholders to skip it — the system detects placeholder strings and moves on to Azure AI.
+> **Tip**: Leave Abacus keys as placeholders to skip it — the system detects placeholder strings and moves on to Azure AI. Leave `AZURE_EMBEDDING_ENDPOINT` blank to disable RAG — the pipeline continues without it.
 
 ---
 
@@ -626,6 +721,9 @@ ALL TESTS PASSED SUCCESSFULLY!
 | PostgreSQL connection refused | DB not running | SQLite fallback activates automatically from `DATABASE_FALLBACK_URL` |
 | Large source file produces too many chunks | Single file >3 MB exceeds cap | Increase `LARGE_SOURCE_FILE_MAX_TOKENS` in `.env` (default: 40,000) |
 | Token Usage panel doesn't appear | Job hasn't reached chunking stage yet | Panel auto-reveals once `chunking` stage completes |
+| Stage 3.5 shows "Skipped" in logs | `AZURE_EMBEDDING_*` not configured or API failed | Set `AZURE_EMBEDDING_ENDPOINT` + `AZURE_EMBEDDING_DEPLOYMENT` in `.env`; pipeline continues without RAG |
+| `[RAG]` lines not appearing in Stage 6 output | Embeddings skipped or vector store not built | Check Stage 3.5 log for the error; confirm API key is valid |
+| Embedding API returns 401 | Wrong or missing `AZURE_AI_API_KEY` | The embedding client reuses `AZURE_AI_API_KEY` — ensure it has access to the embedding deployment |
 
 ---
 

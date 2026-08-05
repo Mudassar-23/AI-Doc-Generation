@@ -9,6 +9,7 @@ from backend.models import Job, JobProgress, JobLog
 
 
 import re
+from backend.config import get_settings
 
 
 def clean_pat_token(pat_token: str) -> str:
@@ -20,27 +21,67 @@ def clean_pat_token(pat_token: str) -> str:
     return pat
 
 
-def format_authed_url(repo_url: str, pat_token: Optional[str]) -> str:
-    """Format repository URL with PAT token for authentication if provided."""
-    if not pat_token or not pat_token.strip():
+def normalize_repo_url(repo_url: str, source_type: str = "github") -> str:
+    """Ensure Azure DevOps URLs are complete using ADO_ORGANIZATION_URL if needed."""
+    url = repo_url.strip()
+    settings = get_settings()
+
+    is_azure = (
+        source_type in ("azure_devops", "azure")
+        or "dev.azure.com" in url
+        or "visualstudio.com" in url
+        or "_git" in url
+    )
+
+    if is_azure:
+        if not url.startswith("http://") and not url.startswith("https://"):
+            org_base = (settings.ado_organization_url or "https://dev.azure.com").rstrip("/")
+            if not org_base.startswith("http://") and not org_base.startswith("https://"):
+                org_base = f"https://{org_base}"
+            url = f"{org_base}/{url.lstrip('/')}"
+
+    return url
+
+
+def format_authed_url(repo_url: str, pat_token: Optional[str] = None, source_type: str = "github") -> str:
+    """Format repository URL with PAT token for authentication, falling back to .env settings if empty."""
+    settings = get_settings()
+    repo_url = normalize_repo_url(repo_url, source_type)
+
+    token = clean_pat_token(pat_token) if pat_token else ""
+
+    is_azure = (
+        source_type in ("azure_devops", "azure")
+        or "dev.azure.com" in repo_url
+        or "visualstudio.com" in repo_url
+    )
+
+    # Fall back to env credentials if no PAT was provided in the UI request
+    if not token:
+        if is_azure and settings.ado_pat:
+            token = clean_pat_token(settings.ado_pat)
+        elif not is_azure and settings.github_pat:
+            token = clean_pat_token(settings.github_pat)
+
+    if not token:
         return repo_url
-    pat = clean_pat_token(pat_token)
-    if not pat:
-        return repo_url
+
+    # If URL already has inline credentials, keep as is
     if "@" in repo_url.split("://")[-1]:
         return repo_url
 
     if "github.com" in repo_url:
-        # Use x-access-token for GitHub PATs (supports both fine-grained github_pat_ and classic ghp_ tokens)
         if repo_url.startswith("https://"):
-            return f"https://x-access-token:{pat}@{repo_url[8:]}"
+            return f"https://x-access-token:{token}@{repo_url[8:]}"
         elif repo_url.startswith("http://"):
-            return f"http://x-access-token:{pat}@{repo_url[7:]}"
+            return f"http://x-access-token:{token}@{repo_url[7:]}"
     else:
+        # Azure DevOps & generic git repositories
         if repo_url.startswith("https://"):
-            return f"https://{pat}@{repo_url[8:]}"
+            return f"https://{token}@{repo_url[8:]}"
         elif repo_url.startswith("http://"):
-            return f"http://{pat}@{repo_url[7:]}"
+            return f"http://{token}@{repo_url[7:]}"
+
     return repo_url
 
 
@@ -53,7 +94,11 @@ def create_job(
     pat_token: Optional[str] = None,
 ) -> Job:
     """Create a new documentation generation job."""
-    authed_url = format_authed_url(repo_url, pat_token)
+    settings = get_settings()
+    if not ai_provider or ai_provider.lower() in ("default", ""):
+        ai_provider = settings.default_ai_provider
+
+    authed_url = format_authed_url(repo_url, pat_token, source_type=source_type)
     job = Job(
         project_name=project_name,
         repo_url=authed_url,

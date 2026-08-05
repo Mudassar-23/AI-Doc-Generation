@@ -29,6 +29,7 @@ const PIPELINE_STAGES = [
   { id: 'cloning',          title: 'Clone repository' },
   { id: 'analyzing',        title: 'Analyze codebase structure' },
   { id: 'chunking',         title: 'Build semantic chunks' },
+  { id: 'embedding',        title: 'Compute embeddings (RAG)' },
   { id: 'llm_analysis',     title: 'AI chunk analysis' },
   { id: 'context_building', title: 'Build structured context' },
   { id: 'template_filling', title: 'Generate documents' },
@@ -66,9 +67,19 @@ function parseGithubUrl(url) {
   return { owner: m[1], repo: m[2].replace(/\.git$/, '') };
 }
 function parseAzureUrl(url) {
-  const m = url.match(/dev\.azure\.com\/([^\/\s]+)\/([^\/\s]+)\/_git\/([^\/\s#?]+)/i);
-  if (!m) throw new Error('Could not parse Azure DevOps URL. Expected: https://dev.azure.com/org/project/_git/repo');
-  return { org: decodeURIComponent(m[1]), project: decodeURIComponent(m[2]), repo: decodeURIComponent(m[3]) };
+  let m = url.match(/dev\.azure\.com\/([^\/\s]+)\/([^\/\s]+)\/_git\/([^\/\s#?]+)/i);
+  if (m) return { org: decodeURIComponent(m[1]), project: decodeURIComponent(m[2]), repo: decodeURIComponent(m[3]) };
+
+  m = url.match(/([^\/\s.]+)\.visualstudio\.com\/([^\/\s]+)\/_git\/([^\/\s#?]+)/i);
+  if (m) return { org: decodeURIComponent(m[1]), project: decodeURIComponent(m[2]), repo: decodeURIComponent(m[3]) };
+
+  m = url.match(/dev\.azure\.com\/([^\/\s]+)\/([^\/\s]+)\/_repositories\/([^\/\s#?]+)/i);
+  if (m) return { org: decodeURIComponent(m[1]), project: decodeURIComponent(m[2]), repo: decodeURIComponent(m[3]) };
+
+  m = url.match(/([^\/\s]+)\/_git\/([^\/\s#?]+)/i);
+  if (m) return { org: '', project: decodeURIComponent(m[1]), repo: decodeURIComponent(m[2]) };
+
+  throw new Error('Could not parse Azure DevOps URL. Expected: https://dev.azure.com/org/project/_git/repo');
 }
 
 /* ============== STEP 1: NAME ============== */
@@ -86,7 +97,21 @@ function setSource(src) {
   document.getElementById('tab-github').classList.toggle('active', src === 'github');
   document.getElementById('tab-azure').classList.toggle('active', src === 'azure');
   const urlInput = document.getElementById('repoUrl');
-  urlInput.placeholder = src === 'github' ? 'https://github.com/owner/repo' : 'https://dev.azure.com/org/project/_git/repo';
+  const patField = document.getElementById('patField');
+  const adoHintField = document.getElementById('adoHintField');
+
+  if (src === 'github') {
+    urlInput.placeholder = 'https://github.com/owner/repo';
+    if (patField) patField.style.display = 'block';
+    if (adoHintField) adoHintField.style.display = 'none';
+  } else {
+    urlInput.placeholder = 'https://dev.azure.com/org/project/_git/repo';
+    if (patField) {
+      patField.style.display = 'none';
+      if (document.getElementById('patToken')) document.getElementById('patToken').value = '';
+    }
+    if (adoHintField) adoHintField.style.display = 'block';
+  }
 }
 
 /* ============== STEP 2: START PIPELINE ============== */
@@ -106,7 +131,7 @@ document.getElementById('startPipeline').addEventListener('click', async () => {
   }
 
   state.repoUrl = url;
-  state.patToken = document.getElementById('patToken') ? document.getElementById('patToken').value.trim() : '';
+  state.patToken = (state.source === 'github' && document.getElementById('patToken')) ? document.getElementById('patToken').value.trim() : '';
 
   // Submit job to backend
   try {
@@ -331,6 +356,23 @@ function stopQueuePolling() {
   if (state.queuePollTimer) { clearInterval(state.queuePollTimer); state.queuePollTimer = null; }
 }
 
+/* ============== JOB SWITCHING ============== */
+function switchJobView(job) {
+  if (!job || state.jobId === job.id) return;
+
+  state.jobId = job.id;
+  state.projectName = job.project_name || `Job #${job.id}`;
+  state.source = (job.source_type === 'github' || job.source_type === 'GitHub') ? 'github' : 'azure';
+  state.repoUrl = job.repo_url || '';
+
+  setupPipelineUI();
+  log(`Switched view to Job #${job.id} ("${state.projectName}")`, 'ok');
+
+  startElapsedTimer();
+  startProgressPolling();
+  pollQueue();
+}
+
 async function pollQueue() {
   try {
     const res = await fetch(`${API_BASE}/api/queue`);
@@ -353,20 +395,36 @@ async function pollQueue() {
       const isCurrent = job.id === state.jobId;
 
       const row = document.createElement('div');
-      row.className = 'queue-row';
-      row.style.opacity = isCurrent ? '1' : '0.7';
+      row.className = 'queue-row' + (isCurrent ? ' active-job' : '');
+      row.title = isCurrent ? `Currently viewing Job #${job.id}` : `Click to view process of Job #${job.id}`;
+
+      const projName = escapeHtml((job.project_name || '').substring(0, 16));
+
       row.innerHTML = `
-        <span class="queue-name">${isCurrent ? '→ ' : ''}#${job.id} ${job.project_name.substring(0, 20)}</span>
-        <span class="queue-status ${statusClass}">${isRunning ? '<span class="qdot"></span>' : ''}${statusLabel}${job.queue_position ? ' #' + job.queue_position : ''}</span>
-        <button class="queue-delete-btn" title="Dismiss from view" aria-label="Dismiss job #${job.id}">×</button>`;
+        <div class="queue-info">
+          <span class="queue-name">${isCurrent ? '<span class="active-dot" title="Active View"></span>' : ''}#${job.id} ${projName}</span>
+          <span class="queue-status ${statusClass}">${isRunning ? '<span class="qdot"></span>' : ''}${statusLabel}${job.queue_position ? ' #' + job.queue_position : ''}</span>
+        </div>
+        <div class="queue-actions">
+          ${!isCurrent ? `<button class="queue-view-btn" title="View process of Job #${job.id}">View</button>` : `<span class="queue-viewing-tag">Viewing</span>`}
+          <button class="queue-delete-btn" title="Dismiss from view" aria-label="Dismiss job #${job.id}">×</button>
+        </div>`;
+
+      // Click row or View button to switch job view
+      if (!isCurrent) {
+        row.addEventListener('click', () => switchJobView(job));
+      }
 
       // Delete button — frontend only, does not touch the database
-      row.querySelector('.queue-delete-btn').addEventListener('click', (e) => {
-        e.stopPropagation();
-        dismissedJobIds.add(job.id);
-        row.classList.add('queue-row-removing');
-        setTimeout(() => row.remove(), 220);
-      });
+      const deleteBtn = row.querySelector('.queue-delete-btn');
+      if (deleteBtn) {
+        deleteBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          dismissedJobIds.add(job.id);
+          row.classList.add('queue-row-removing');
+          setTimeout(() => row.remove(), 220);
+        });
+      }
 
       list.appendChild(row);
     }
@@ -392,9 +450,9 @@ async function showResults() {
       <div class="pill"><span class="dot" style="background:var(--good)"></span>ZIP ready</div>
       <div class="pill"><span class="dot" style="background:${job.zip_generated ? 'var(--good)' : 'var(--bad)'}"></span>ZIP: ${job.zip_generated ? 'Yes' : 'No'}</div>`;
 
-    // Show file list from logs
+    // Show file list from logs (6 documents + index.json manifest)
     const allFiles = ['PRD.md', 'Architecture-Design.md', 'Database-Design.md', 'API-Specification.md',
-                      'Deployment-Guide.md', 'Run-Locally.md', 'Stack-and-Techniques.md', 'Review-and-TODO.md', 'index.json'];
+                      'Deployment-Guide.md', 'Review-and-TODO.md', 'index.json'];
     const fileListEl = document.getElementById('fileList');
     fileListEl.innerHTML = '';
     allFiles.forEach(name => {

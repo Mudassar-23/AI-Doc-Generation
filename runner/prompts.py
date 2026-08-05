@@ -312,20 +312,45 @@ TEMPLATE_CONTEXT_MAP = {
     ],
     "Deployment Guide.md": [
         "DEPLOYMENT", "DOCKER", "CI_CD",
-        "CONFIGURATION", "ENV_VARIABLES"
-    ],
-    "Run Locally.md": [
-        "DEPENDENCIES", "CONFIGURATION", "ENV_VARIABLES",
-        "DEPLOYMENT", "TECH_STACK"
-    ],
-    "Stack and Techniques.md": [
-        "TECH_STACK", "DEPENDENCIES", "CODING_PATTERNS",
-        "MODULES", "ARCHITECTURE"
+        "CONFIGURATION", "ENV_VARIABLES", "DEPENDENCIES"
     ],
     "Review and TODO.md": [
         "MISSING_FEATURES", "SECURITY", "ASSUMPTIONS",
         "UNKNOWN_AREAS", "CODING_PATTERNS"
     ],
+}
+
+
+# =====================================================================
+# SEMANTIC RETRIEVAL QUERIES FOR RAG (Stage 3.5 → Stage 6)
+# =====================================================================
+# Each template uses a natural-language query to find the most relevant
+# raw code chunks via cosine similarity before the LLM call.
+
+TEMPLATE_SEMANTIC_QUERIES = {
+    "PRD.md": (
+        "product requirements features business logic user stories goals objectives scope"
+    ),
+    "Architecture Design.md": (
+        "system architecture components services modules layers data flow design patterns"
+        " microservices monolith dependency injection repository pattern tech stack frameworks libraries"
+    ),
+    "Database Design.md": (
+        "database models tables schemas ORM migrations columns relationships SQL foreign key"
+        " SQLAlchemy Sequelize Mongoose entity"
+    ),
+    "API Specification.md": (
+        "API routes endpoints controllers REST HTTP GET POST PUT DELETE request response"
+        " FastAPI Express Flask handler middleware authentication JWT"
+    ),
+    "Deployment Guide.md": (
+        "Docker Dockerfile docker-compose deployment CI CD pipeline Kubernetes Nginx"
+        " environment variables production configuration cloud deploy local setup prerequisites install run start"
+    ),
+    "Review and TODO.md": (
+        "TODO FIXME technical debt code smell missing feature incomplete security"
+        " vulnerability bug improvement refactor warning"
+    ),
 }
 
 

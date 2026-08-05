@@ -1,79 +1,108 @@
-# Documentation Template Pack — How To Use With an LLM
 
-This folder contains **8 locked-format templates** plus this instruction file. They encode the exact structure, tone, and visual conventions used across your project docs (badges, color palette, section numbering, Mermaid diagram theming, table styles) — independent of any specific project's content.
+# Documentation Template Pack — Authoring Contract
 
-## Purpose
+> **This README is the contract. The six templates are the skeletons.** Fill them — do not invent new document shapes.
 
-Instead of letting an LLM invent its own report structure per project, you give it:
-1. **This README** (the rules).
-2. **The 8 template files** (the skeletons, one per doc type).
-3. **Your project's source material** (a repo, a description, code, etc.).
+---
 
-The LLM's job becomes: *fill in the placeholders, following the rules below* — not *design a new report format*.
+## 1. The Six Documents (only these)
 
-## The 8 Templates
+| # | File | Answers | Audience |
+|---|---|---|---|
+| 1 | `PRD.md` | What does it do, for whom, under what constraints? | Product, joiners, auditors |
+| 2 | `Architecture Design.md` | How is it built, and why? | Engineers, architects |
+| 3 | `Database Design.md` | Where does state live, in what shape? | Data engineers, DBAs |
+| 4 | `API Specification.md` | What are the contracts at every boundary? | Integrators, QA |
+| 5 | `Deployment Guide.md` | How do I build, run, ship, and roll back? | SRE, DevOps |
+| 6 | `Review and TODO.md` | What is wrong, and what to fix first? | Leadership, security, PM |
 
-| # | File | Purpose |
-|---|---|---|
-| 1 | `TEMPLATE-PRD.md` | Product requirements — overview, goals, personas, features, success metrics |
-| 2 | `TEMPLATE-Architecture-Design.md` | System architecture, components, data flow, trade-offs |
-| 3 | `TEMPLATE-Database-Design.md` | Data storage — current state + proposed schema if applicable |
-| 4 | `TEMPLATE-API-Specification.md` | Interface contracts (HTTP or in-process), request/response shapes |
-| 5 | `TEMPLATE-Deployment-Guide.md` | How the project is (or would be) deployed, env vars, rollback |
-| 6 | `TEMPLATE-Run-Locally.md` | Local setup, prerequisites, verification steps, troubleshooting |
-| 7 | `TEMPLATE-Stack-and-Techniques.md` | Languages, libraries, ML/technical techniques, testing status |
-| 8 | `TEMPLATE-Review-and-TODO.md` | Honest strengths/risks review + prioritized TODO list |
+**Target length:** each template **200–250 lines**; this README **100–120 lines**. Keep every Mermaid diagram. Drop filler, glossaries, and duplicate appendices.
 
-## Global Rules (apply to every template)
+---
 
-1. **Never invent new top-level structure.** Keep every `##` heading in a template, in order. Do not add, remove, reorder, or rename sections unless a section is explicitly marked `(omit if not applicable)`.
-2. **Badges are mandatory**, first line of every file, using this exact pattern:
-   ```
-   ![status](https://img.shields.io/badge/status-{STATUS}-2E74B5?style=flat-square) ![type](https://img.shields.io/badge/type-{TYPE}-1F4D78?style=flat-square)
-   ```
-   - `{STATUS}` = `active`, `no%20database`, `no%20REST%20API`, `draft`, etc. (URL-encode spaces as `%20`).
-   - `{TYPE}` = one lowercase word matching the doc: `PRD`, `architecture`, `database`, `API`, `deployment`, `setup`, `stack`, `review`.
-3. **Title block is mandatory**, exactly this shape:
-   ```
-   # {Document Title}
-   ### {Project Name}
+## 2. Non-Negotiable Rules
 
-   ---
-   ```
-4. **Color palette is fixed** unless the project supplies its own theme — reuse these hex values everywhere (badges, Mermaid `themeVariables`):
-   - Primary: `#2E74B5`
-   - Secondary: `#1F4D78`
-   - Accent: `#0563C1`
-   - Tertiary/fill: `#EAF1FA`
-   If the project has its own brand colors, substitute them consistently across **all 8 docs**, not just one.
-5. **Mermaid diagrams**: every diagram opens with this init line (swap colors per rule 4 if rebranded):
-   ```
-   %%{init: {'theme':'base','themeVariables':{'primaryColor':'#2E74B5','primaryTextColor':'#ffffff','primaryBorderColor':'#1F4D78','lineColor':'#1F4D78','tertiaryColor':'#EAF1FA'}}}%%
-   ```
-   Use `flowchart`, `sequenceDiagram`, or `erDiagram` as appropriate — never a bare, unstyled diagram.
-6. **Tables over prose** for anything enumerable (inputs/outputs, components, personas, troubleshooting steps, tech stack). Prose is for explaining *why*, tables are for listing *what*.
-7. **Honesty over polish.** State clearly when something is "not implemented," "proposed — not present in the repo," "inferred," or "no verified information exists." Do not present proposed/future work as if it already exists. Mark inferred content explicitly with *(inferred)*.
-8. **Cross-reference other docs** by name in italics, e.g. `*see Deployment-Guide.md, section 6*`, instead of duplicating content across files.
-9. **No filler sections.** If a section genuinely doesn't apply (e.g. no database exists), keep the heading but state that plainly in 1–2 sentences rather than deleting the section or padding it.
-10. **Voice**: direct, technical, no marketing language. Prefer "This project does X" over "This innovative solution leverages X."
+| # | Rule |
+|---|---|
+| **C1** | Keep every `##` / `###` heading from the template, in order. Do not add, remove, or rename. |
+| **C2** | Empty section → `[NOT APPLICABLE] — <reason>` or `[MISSING] — searched <glob>`. Never delete the heading. |
+| **C3** | Cite claims as `` `path/to/file.ext:L12-L34` ``. |
+| **C4** | Never present proposed work as existing. Use `[PROPOSED]` only in Recommendations / `Review and TODO.md`. |
+| **C5** | Tag inferences `[ASSUMPTION-<CAT>-###]` and register them in Review. |
+| **C6** | Tables for enumerable facts; prose for reasoning. |
+| **C7** | Every Mermaid block uses the init line + `classDef` library below. |
+| **C8** | Secret **names** only — never values. |
+| **C9** | Cross-reference other docs; do not duplicate facts. |
+| **C10** | Present tense for what exists; conditional + `[PROPOSED]` for what does not. |
+| **C11** | Delete every `<!-- FILL: -->` / `<!-- EXAMPLE -->` from output. Keep `<!-- ANCHOR: -->`. |
 
-## Prompt to Paste Into an LLM
+**Markers:** `[MISSING]` · `[NOT APPLICABLE]` · `[PROPOSED]` · `[DEPRECATED]` · `[CONFLICT]` · `[ASSUMPTION-BUS|ARCH|DATA|API|OPS|SEC|PERF|TEST-###]`
 
-```
-You will generate professional project documentation using a fixed template pack.
+**Tokens:** `{{REQUIRED}}` → value or `[MISSING]` · `{{?OPTIONAL}}` → value or `—` · `{{#EACH x}}…{{/EACH}}` → one row per item
 
-Rules:
-- Follow every rule in 00-README-How-To-Use.md exactly.
-- For each of the 8 template files I provide, keep the section structure, badges, title block, color palette, and Mermaid styling identical to the template — only replace the {PLACEHOLDER} content with real information about the project below.
-- Do not add, remove, or reorder ## sections.
-- Do not invent features, metrics, or architecture that aren't evidenced by the project material I give you. Mark anything you must infer as "(inferred)".
-- Where the template shows an example table/diagram, replace its contents but keep its shape.
+---
 
-Project material:
-[paste repo README / code / description / links here]
+## 3. Mermaid Standard
 
-Generate the 8 files now, one at a time, in this order: PRD, Architecture-Design, Database-Design, API-Specification, Deployment-Guide, Run-Locally, Stack-and-Techniques, Review-and-TODO.
+Every `flowchart` / `sequenceDiagram` / `erDiagram` / `stateDiagram-v2` / `classDiagram` starts with:
+
+```text
+%%{init: {'theme':'base','themeVariables':{'primaryColor':'#2E74B5','primaryTextColor':'#ffffff','primaryBorderColor':'#1F4D78','lineColor':'#1F4D78','secondaryColor':'#EAF1FA','tertiaryColor':'#EAF1FA','fontFamily':'Segoe UI, Inter, sans-serif','fontSize':'14px'}}}%%
 ```
 
-## Tip
-Keep this pack itself project-agnostic — don't edit the templates to match one specific project. If you want a *second* palette (e.g. for a different client brand), duplicate this whole folder rather than overwriting it.
+Shared classes (paste what you use):
+
+```text
+    classDef core     fill:#2E74B5,stroke:#1F4D78,color:#ffffff,stroke-width:1px;
+    classDef store    fill:#EAF1FA,stroke:#1F4D78,color:#1F4D78,stroke-width:1px;
+    classDef external fill:#F0E9FA,stroke:#6B4E9E,color:#4A356F,stroke-width:1px;
+    classDef ai       fill:#FFF3E0,stroke:#E65100,color:#8A3800,stroke-width:1px;
+    classDef danger   fill:#FDE8E8,stroke:#B91C1C,color:#B91C1C,stroke-width:1px;
+    classDef success  fill:#E3F5EA,stroke:#1E7A4B,color:#12613A,stroke-width:1px;
+    classDef warn     fill:#FEF3C7,stroke:#B45309,color:#92400E,stroke-width:1px;
+    classDef proposed fill:#F5F7FA,stroke:#94A3B8,color:#475569,stroke-dasharray:4 3;
+```
+
+**Never** use Mermaid hexagon `nodeId{{label}}` — it collides with placeholders. Use `nodeId["label"]`.
+
+| Document | Min diagrams |
+|---|---|
+| PRD | context, feature tree, journey, experience `journey`, entity `stateDiagram-v2`, debt `quadrantChart` |
+| Architecture | context, container, component, ≥1 sequence, resilience, trust boundary |
+| Database | logical `erDiagram`, lifecycle `stateDiagram-v2`, read/write `flowchart` |
+| API | auth `sequenceDiagram`, error `flowchart`, payload `classDiagram` |
+| Deployment | topology, CI/CD, release/git, rollback tree |
+| Review | risk `quadrantChart`, remediation `gantt`, finding dependency `flowchart` |
+
+---
+
+## 4. Generation Order & Pipeline
+
+```mermaid
+%%{init: {'theme':'base','themeVariables':{'primaryColor':'#2E74B5','primaryTextColor':'#ffffff','primaryBorderColor':'#1F4D78','lineColor':'#1F4D78','tertiaryColor':'#EAF1FA','fontFamily':'Segoe UI, Inter, sans-serif'}}}%%
+flowchart LR
+    REPO[("Repo")] --> CTX["Fact ledger"]
+    CTX --> PRD --> ARC --> DBD --> API --> DEP --> REV
+    classDef core fill:#2E74B5,stroke:#1F4D78,color:#ffffff;
+    classDef store fill:#EAF1FA,stroke:#1F4D78,color:#1F4D78;
+    class PRD,ARC,DBD,API,DEP,REV core;
+    class REPO,CTX store;
+```
+
+1. **Survey** — fact ledger only (claim → file:line → V/I/U). No prose.
+2. **Draft** — fill PRD → Architecture → Database → API → Deployment from the ledger.
+3. **Cross-check** — reconcile contradictions; insert § links.
+4. **Review last** — consolidate assumptions, gaps, findings; score confidence.
+
+---
+
+## 5. Master Prompt (paste with templates + repo)
+
+```text
+Follow 00-README-HOW_To-Use.md rules C1–C11. Keep every template heading.
+Cite path:Lstart-Lend. Tag inferences [ASSUMPTION-*-###]. Never invent endpoints/tables.
+No secret values. Keep all Mermaid diagrams; use §3 init + classDef.
+Delete FILL/EXAMPLE comments. Target 200–250 lines per doc.
+PASS 1: fact ledger. PASS 2: five docs in order. PASS 3: reconcile.
+PASS 4: Review and TODO.md last. Begin PASS 1.
+```

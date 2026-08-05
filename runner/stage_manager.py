@@ -1,13 +1,14 @@
 """
-Stage Manager — orchestrates the 7-stage documentation generation pipeline.
+Stage Manager — orchestrates the documentation generation pipeline.
 
 Pipeline:
   1. Clone Repository
   2. Analyze Repository
   3. Build Chunks
+  3.5 Compute Embeddings (optional — Azure OpenAI, graceful skip if unavailable)
   4. LLM Chunk Analysis
   5. Build Structured Context
-  6. Fill Templates
+  6. Fill Templates (RAG-enhanced when embeddings are available)
   7. Package ZIP
 """
 import sys
@@ -30,12 +31,15 @@ from runner.stages.s5_context_build import build_structured_context
 from runner.stages.s6_template_fill import fill_templates
 from runner.stages.s7_package import package_documents
 from runner.providers.base import BaseProvider
+from runner.analysis.embeddings import AzureEmbedder
+from runner.analysis.vector_store import ChunkVectorStore
 
 
 STAGES = [
     "cloning",
     "analyzing",
     "chunking",
+    "embedding",        # Stage 3.5 — skipped gracefully when unavailable
     "llm_analysis",
     "context_building",
     "template_filling",
@@ -49,6 +53,7 @@ class StageManager:
     def __init__(self, db: Session, provider: BaseProvider):
         self.db = db
         self.provider = provider
+        self.embedder = AzureEmbedder()
 
     def run_job(self, job: Job):
         """Run the full pipeline for a job."""
@@ -82,6 +87,9 @@ class StageManager:
             token_meta = json.dumps({"chunks_total": chunk_total_tokens, "num_chunks": len(chunks)})
             self._update_progress(job.id, "chunking", 100, f"TOKENS:{token_meta} {chunks_msg}")
             self._log(job.id, "info", f"Built {len(chunks)} chunks — {chunk_total_tokens:,} total tokens")
+
+            # Stage 3.5: Compute Embeddings (optional)
+            vector_store = self._run_embedding_stage(job, chunks)
 
             # Stage 4: LLM Chunk Analysis
             self._update_progress(job.id, "llm_analysis", 0, "Analyzing chunks with AI...")
@@ -120,6 +128,8 @@ class StageManager:
                 project_name=job.project_name,
                 repo_url=job.repo_url,
                 progress_callback=template_progress,
+                vector_store=vector_store,
+                embedder=self.embedder,
             )
             tmpl_meta = json.dumps({"tmpl_in": tmpl_in_tokens, "tmpl_out": tmpl_out_tokens, "num_docs": len(documents)})
             self._update_progress(job.id, "template_filling", 100,
@@ -161,6 +171,58 @@ class StageManager:
             # Clean up temp directory
             if repo_path:
                 cleanup_temp(job.id)
+
+    # ------------------------------------------------------------------
+    # Stage 3.5 — Embedding helper
+    # ------------------------------------------------------------------
+
+    def _run_embedding_stage(self, job, chunks: list):
+        """
+        Compute embeddings for all chunks and build a ChunkVectorStore.
+
+        Returns a populated ChunkVectorStore on success, or None if embeddings
+        are not configured / fail — in which case Stage 6 uses full context only.
+        """
+        if not self.embedder.is_available():
+            self._log(job.id, "info",
+                      "[Stage 3.5] Embeddings not configured — skipping (RAG will be inactive).")
+            return None
+
+        try:
+            self._update_progress(
+                job.id, "embedding", 0,
+                f"Computing embeddings for {len(chunks)} chunks..."
+            )
+            self._log(job.id, "info",
+                      f"[Stage 3.5] Starting embedding for {len(chunks)} chunks "
+                      f"using '{self.embedder.deployment}'")
+
+            # Embed all chunks (mutates chunk dicts in place, adds 'embedding' key)
+            self.embedder.embed_chunks(chunks)
+
+            # Build the vector index
+            store = ChunkVectorStore()
+            store.build(chunks)
+
+            embedded_count = sum(1 for c in chunks if "embedding" in c)
+            self._update_progress(
+                job.id, "embedding", 100,
+                f"Embedded {embedded_count}/{len(chunks)} chunks — vector index ready"
+            )
+            self._log(job.id, "info",
+                      f"[Stage 3.5] Vector index built — {embedded_count} chunks indexed.")
+
+            return store if store.is_built() else None
+
+        except Exception as e:
+            # Non-fatal — log and continue without RAG
+            self._log(job.id, "info",
+                      f"[Stage 3.5] Embedding failed ({e}) — pipeline continues without RAG.")
+            self._update_progress(
+                job.id, "embedding", 100,
+                f"Skipped (error: {str(e)[:80]})"
+            )
+            return None
 
     def _update_progress(self, job_id: int, stage: str, percent: int, message: str):
         """Update or create progress entry for a stage."""

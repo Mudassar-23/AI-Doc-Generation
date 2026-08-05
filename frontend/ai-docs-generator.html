@@ -46,6 +46,7 @@
   <div class="screen" id="screen-connect">
     <div class="top-actions">
       <span class="back-link" onclick="goTo('screen-name')">← back</span>
+      <span class="next-link" onclick="goTo('screen-pipeline')">next →</span>
     </div>
     <p class="eyebrow">Step 2</p>
     <h2 class="title" id="connectTitle">Connect a repository</h2>
@@ -68,10 +69,16 @@
         <input type="url" id="repoUrl" placeholder="https://github.com/owner/repo">
       </div>
 
-      <div class="field" style="margin-top:16px;">
+      <div class="field" id="patField" style="margin-top:16px;">
         <label>Personal Access Token (PAT) <span style="text-transform:none;opacity:0.65;font-size:10px;letter-spacing:0.5px;">(Optional — for private repos / fast cloning)</span></label>
-        <input type="password" id="patToken" placeholder="e.g. ghp_xxxxxxxxxxxxxxxxxxxx or Azure PAT">
+        <input type="password" id="patToken" placeholder="e.g. ghp_xxxxxxxxxxxxxxxxxxxx">
         <div class="hint">Fast-tracks repository cloning and grants access to private repositories.</div>
+      </div>
+
+      <div class="field" id="adoHintField" style="margin-top:16px;display:none;">
+        <div class="hint" style="color:var(--accent-2);line-height:1.5;">
+          🔒 Azure DevOps PAT & Organization settings are protected & managed securely in backend configuration (<code>.env</code>).
+        </div>
       </div>
 
       <button class="btn btn-primary btn-block" id="startPipeline" style="margin-top:22px;">Start generation →</button>
@@ -81,6 +88,10 @@
 
   <!-- SCREEN 3: PIPELINE -->
   <div class="screen" id="screen-pipeline">
+    <div class="top-actions">
+      <span class="back-link" onclick="goTo('screen-connect')">← back</span>
+      <span class="next-link" id="nextToResults" onclick="showResults()">next →</span>
+    </div>
     <p class="eyebrow" id="pipelineEyebrow">Step 3 · Running</p>
     <h2 class="title" id="pipelineTitle">Generating documentation…</h2>
     <p class="sub" id="pipelineSub">Cloning repository, analyzing code in chunks, then filling templates with AI.</p>
@@ -148,6 +159,9 @@
 
   <!-- SCREEN 4: RESULTS -->
   <div class="screen" id="screen-results">
+    <div class="top-actions">
+      <span class="back-link" onclick="goTo('screen-pipeline')">← back</span>
+    </div>
     <p class="eyebrow">Step 4 · Complete</p>
     <h2 class="title">Documentation is ready</h2>
     <p class="sub" id="resultsSub">All files were generated from live repository context.</p>
@@ -162,7 +176,7 @@
       <button class="btn btn-primary" id="downloadZip">⬇ Download ZIP</button>
       <button class="btn btn-ghost" onclick="resetAll()">Start over</button>
     </div>
-    <p class="footnote">Files: <code class="k">PRD.md</code> <code class="k">Architecture-Design.md</code> <code class="k">Database-Design.md</code> <code class="k">API-Specification.md</code> <code class="k">Deployment-Guide.md</code> <code class="k">Run-Locally.md</code> <code class="k">Stack-and-Techniques.md</code> <code class="k">Review-and-TODO.md</code> <code class="k">index.json</code></p>
+    <p class="footnote">Files: <code class="k">PRD.md</code> <code class="k">Architecture-Design.md</code> <code class="k">Database-Design.md</code> <code class="k">API-Specification.md</code> <code class="k">Deployment-Guide.md</code> <code class="k">Review-and-TODO.md</code> <code class="k">index.json</code></p>
   </div>
 
 </div>

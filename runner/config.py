@@ -26,6 +26,21 @@ class RunnerConfig:
     AZURE_AI_DEPLOYMENT_NAME = os.getenv("AZURE_AI_DEPLOYMENT_NAME", "")
     AZURE_AI_API_VERSION = os.getenv("AZURE_AI_API_VERSION", "2024-06-01")
 
+    # Azure DevOps / GitHub Default Credentials
+    ADO_PAT = os.getenv("ADO_PAT", os.getenv("AZURE_DEVOPS_PAT", ""))
+    ADO_ORGANIZATION_URL = os.getenv("ADO_ORGANIZATION_URL", os.getenv("AZURE_DEVOPS_ORG_URL", ""))
+    GITHUB_PAT = os.getenv("GITHUB_PAT", "")
+
+    # Azure OpenAI Embeddings (reuses AZURE_AI_API_KEY)
+    AZURE_EMBEDDING_ENDPOINT = os.getenv("AZURE_EMBEDDING_ENDPOINT", "")
+    AZURE_EMBEDDING_DEPLOYMENT = os.getenv("AZURE_EMBEDDING_DEPLOYMENT", "text-embedding-ada-002")
+    # Auto-enabled when endpoint + deployment are configured
+    EMBEDDINGS_ENABLED = bool(
+        os.getenv("AZURE_EMBEDDING_ENDPOINT", "") and
+        os.getenv("AZURE_EMBEDDING_DEPLOYMENT", "") and
+        os.getenv("AZURE_AI_API_KEY", "")
+    )
+
     # Default provider
     DEFAULT_AI_PROVIDER = os.getenv("DEFAULT_AI_PROVIDER", "mock")
 
