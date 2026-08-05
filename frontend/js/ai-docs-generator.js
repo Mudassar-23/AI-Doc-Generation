@@ -29,7 +29,6 @@ const PIPELINE_STAGES = [
   { id: 'cloning',          title: 'Clone repository' },
   { id: 'analyzing',        title: 'Analyze codebase structure' },
   { id: 'chunking',         title: 'Build semantic chunks' },
-  { id: 'embedding',        title: 'Compute embeddings (RAG)' },
   { id: 'llm_analysis',     title: 'AI chunk analysis' },
   { id: 'context_building', title: 'Build structured context' },
   { id: 'template_filling', title: 'Generate documents' },

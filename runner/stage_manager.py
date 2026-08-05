@@ -189,10 +189,6 @@ class StageManager:
             return None
 
         try:
-            self._update_progress(
-                job.id, "embedding", 0,
-                f"Computing embeddings for {len(chunks)} chunks..."
-            )
             self._log(job.id, "info",
                       f"[Stage 3.5] Starting embedding for {len(chunks)} chunks "
                       f"using '{self.embedder.deployment}'")
@@ -205,10 +201,6 @@ class StageManager:
             store.build(chunks)
 
             embedded_count = sum(1 for c in chunks if "embedding" in c)
-            self._update_progress(
-                job.id, "embedding", 100,
-                f"Embedded {embedded_count}/{len(chunks)} chunks — vector index ready"
-            )
             self._log(job.id, "info",
                       f"[Stage 3.5] Vector index built — {embedded_count} chunks indexed.")
 
@@ -218,10 +210,6 @@ class StageManager:
             # Non-fatal — log and continue without RAG
             self._log(job.id, "info",
                       f"[Stage 3.5] Embedding failed ({e}) — pipeline continues without RAG.")
-            self._update_progress(
-                job.id, "embedding", 100,
-                f"Skipped (error: {str(e)[:80]})"
-            )
             return None
 
     def _update_progress(self, job_id: int, stage: str, percent: int, message: str):

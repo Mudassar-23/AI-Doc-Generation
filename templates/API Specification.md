@@ -1,6 +1,5 @@
 # API Specification
 ### {{PROJECT_NAME}}
-
 ## 1. Overview
 {{API_SUMMARY}}
 
