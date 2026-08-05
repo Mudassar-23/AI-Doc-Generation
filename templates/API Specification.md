@@ -1,11 +1,6 @@
 # API Specification
 ### {{PROJECT_NAME}}
 
-| Field | Value |
-|---|---|
-| **ID** / Ver / Status | `{{PROJECT_SLUG}}-API-001` · `{{DOC_VERSION}}` · `{{DOC_STATUS}}` |
-| Style / OpenAPI / Source | {{API_STYLE}} · {{OPENAPI_STATUS}} · `{{REPO_URL}}` @ `{{COMMIT_SHA}}` |
-
 ## 1. Overview
 {{API_SUMMARY}}
 
