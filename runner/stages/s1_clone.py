@@ -98,6 +98,8 @@ def clone_repository(repo_url: str, source_type: str, job_id: int) -> str:
     if os.path.exists(temp_dir):
         print(f"[Clone] Cleaning existing directory: {temp_dir}")
         safe_rmtree(temp_dir)
+    if os.path.exists(repo_dir):
+        safe_rmtree(repo_dir)
     os.makedirs(temp_dir, exist_ok=True)
 
     try:

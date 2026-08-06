@@ -113,10 +113,16 @@ class AzureEmbedder:
                     base_endpoint = base_endpoint[: -len(suffix)]
                     break
 
+            http_client = None
+            if RunnerConfig.SSL_CERT_FILE:
+                import httpx
+                http_client = httpx.Client(verify=RunnerConfig.SSL_CERT_FILE)
+
             self._client = AzureOpenAI(
                 azure_endpoint=base_endpoint,
                 api_key=self.api_key,
                 api_version="2024-02-01",   # stable embedding API version
+                http_client=http_client,
             )
         return self._client
 

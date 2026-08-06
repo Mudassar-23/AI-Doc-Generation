@@ -25,10 +25,16 @@ class AzureAIProvider(BaseProvider):
         self.retry_delay = RunnerConfig.RETRY_BASE_DELAY
 
         if self.is_available():
+            http_client = None
+            if RunnerConfig.SSL_CERT_FILE:
+                import httpx
+                http_client = httpx.Client(verify=RunnerConfig.SSL_CERT_FILE)
+
             self.client = AzureOpenAI(
                 azure_endpoint=self.endpoint,
                 api_key=self.api_key,
                 api_version=self.api_version,
+                http_client=http_client,
             )
         else:
             self.client = None

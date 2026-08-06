@@ -26,6 +26,12 @@ class RunnerConfig:
     AZURE_AI_DEPLOYMENT_NAME = os.getenv("AZURE_AI_DEPLOYMENT_NAME", "")
     AZURE_AI_API_VERSION = os.getenv("AZURE_AI_API_VERSION", "2024-06-01")
 
+    # SSL / CA Certificate (for corporate proxies / SSL verification)
+    SSL_CERT_FILE = os.getenv("SSL_CERT_FILE", os.getenv("REQUESTS_CA_BUNDLE", os.getenv("SSL_CERT_PATH", "")))
+    if SSL_CERT_FILE:
+        os.environ["SSL_CERT_FILE"] = SSL_CERT_FILE
+        os.environ["REQUESTS_CA_BUNDLE"] = SSL_CERT_FILE
+
     # Azure DevOps / GitHub Default Credentials
     ADO_PAT = os.getenv("ADO_PAT", os.getenv("AZURE_DEVOPS_PAT", ""))
     ADO_ORGANIZATION_URL = os.getenv("ADO_ORGANIZATION_URL", os.getenv("AZURE_DEVOPS_ORG_URL", ""))

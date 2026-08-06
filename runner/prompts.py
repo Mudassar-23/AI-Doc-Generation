@@ -42,18 +42,19 @@ You will receive:
 3. Template rules from the 00-README-How-To-Use.md guide.
 
 CRITICAL RULES:
-1. KEEP all template sections, headings, badges, and Mermaid theme styling EXACTLY as provided.
-2. Do NOT add, remove, reorder, or rename any ## sections.
-3. Replace ONLY the {PLACEHOLDER} markers with real information from the Structured Context.
-4. Badges are MANDATORY on the first line, using the exact pattern from the template.
-5. The Mermaid init line with theme variables must be preserved exactly.
-6. Where information is genuinely missing from the context, write: "Information Not Found" or "Not Implemented".
-7. NEVER hallucinate or invent features, endpoints, tables, or architecture not in the context.
-8. Mark anything you must infer as "(inferred)" in italics.
-9. Use tables over prose for anything enumerable (components, endpoints, features, troubleshooting).
-10. Cross-reference other documents by name in italics, e.g., "see *Deployment-Guide.md, section 6*".
-11. Voice: direct, technical, no marketing language. "This project does X" not "This innovative solution leverages X".
-12. Output the completed Markdown document ONLY — no preamble, no closing remarks, no wrapping in code fences."""
+1. KEEP all main section headings (## headings), badges, and Mermaid theme styling provided.
+2. Do NOT add new main sections or rename main headings.
+3. EXCELLENT LAYMAN SECTION DESCRIPTIONS (MANDATORY): Under EVERY main section heading (## heading) in the template, write a rich, formal, and thorough introductory paragraph of approximately 5 to 10 lines. This description must explain the heading topic exceptionally well in simple, human-accessible, layman-understandable language — detailing what this part of the system is, why it is important to the application, and how it works so non-technical stakeholders can easily understand it.
+4. REMOVE UNFOUND / MISSING CONTENT: If specific content, tables, diagrams, or subsections requested by placeholders in the template are NOT found in the repository (e.g. no Docker containers, no SQL tables, no CI/CD pipeline configs), REMOVE those empty placeholder tables, unused code blocks, or missing sub-diagrams completely from the final document. Do NOT leave empty tables or placeholder markers for missing features. Simply note cleanly in the section description that the feature is not implemented/present in this repository and remove the empty tables/diagrams.
+5. Replace ONLY the {PLACEHOLDER} markers with real, verified information from the Structured Context.
+6. Badges are MANDATORY on the first line, using the exact pattern from the template.
+7. The Mermaid init line with theme variables must be preserved for any diagrams that remain.
+8. NEVER hallucinate or invent features, endpoints, tables, or architecture not present in the repository context.
+9. Mark anything you must infer from code patterns as "(inferred)" in italics.
+10. Use clean tables over prose for any enumerable data (components, endpoints, features, dependencies).
+11. Cross-reference other documents by name in italics, e.g., "see *Deployment-Guide.md, section 6*".
+12. Voice: formal, clear, human-understandable, and direct. Combine accessible, educational section introductions with precise, clean technical facts.
+13. Output the completed Markdown document ONLY — no preamble, no closing remarks, no wrapping in code fences."""
 
 
 # =====================================================================
@@ -265,15 +266,15 @@ RULES:
 TEMPLATE_FILL_PROMPT = """Fill the following documentation template using the Structured Context provided.
 
 ## Template Rules (from 00-README-How-To-Use.md):
-- Keep every ## heading in the template, in order. Do NOT add, remove, reorder, or rename sections.
+- Keep main ## headings in order.
+- MANDATORY LAYMAN SECTION DESCRIPTIONS: Immediately following each ## main section heading, write a rich, formal, and clear introductory description paragraph (approx. 5 to 10 lines) in layman-understandable language explaining the heading topic, its purpose, and how it works in plain terms.
+- REMOVE UNFOUND / MISSING CONTENT: If information for specific tables, diagrams, or subsections in the template is NOT found in the repository, REMOVE those empty tables, diagrams, or placeholder blocks from the final document. Do not leave empty rows, unused placeholder structures, or filler tables.
 - Badges are MANDATORY on the first line.
 - Color palette is fixed: Primary #2E74B5, Secondary #1F4D78, Accent #0563C1, Tertiary #EAF1FA.
-- Every Mermaid diagram must start with the init line preserving these theme colors.
-- Use tables over prose for anything enumerable.
-- State clearly when something is "not implemented", "proposed — not present in the repo", or "inferred".
+- Every remaining Mermaid diagram must start with the init line preserving these theme colors.
+- Use clean tables over prose for anything enumerable.
 - Cross-reference other docs by name in italics instead of duplicating content.
-- No filler sections — if genuinely not applicable, state that in 1-2 sentences.
-- Voice: direct, technical, no marketing language.
+- Voice: formal, clear, human-understandable explanations for section intros paired with precise technical facts in tables and diagrams.
 
 ## Project Info:
 - Project Name: {project_name}
@@ -286,7 +287,7 @@ TEMPLATE_FILL_PROMPT = """Fill the following documentation template using the St
 {structured_context}
 
 ## Output:
-Generate the completed Markdown document. Replace all {{PLACEHOLDER}} markers with real information from the Structured Context. Keep all formatting, structure, and Mermaid themes intact."""
+Generate the completed Markdown document. Under every ## heading, include the formal, layman-accessible 5-10 line section description paragraph. Replace all {{PLACEHOLDER}} markers with real data from the Structured Context, and REMOVE any tables, diagrams, or blocks whose content is not found in the repository. Keep all formatting, structure, and Mermaid themes intact."""
 
 
 # =====================================================================
