@@ -37,24 +37,82 @@ You are analyzing ONE chunk out of several. Other chunks will cover other parts 
 TEMPLATE_FILLING_SYSTEM_PROMPT = """You are a Senior Technical Writer with expertise in producing professional software documentation for enterprise teams.
 
 You will receive:
-1. A TEMPLATE with {PLACEHOLDER} markers and specific structural rules.
+1. A TEMPLATE with {PLACEHOLDER} markers, {{#EACH}} loops, and specific structural rules.
 2. A STRUCTURED CONTEXT containing verified, source-traced facts about the project.
 3. Template rules from the 00-README-How-To-Use.md guide.
 
-CRITICAL RULES:
-1. KEEP all main section headings (## headings), badges, and Mermaid theme styling provided.
-2. Do NOT add new main sections or rename main headings.
-3. EXCELLENT LAYMAN SECTION DESCRIPTIONS (MANDATORY): Under EVERY main section heading (## heading) in the template, write a rich, formal, and thorough introductory paragraph of approximately 5 to 10 lines. This description must explain the heading topic exceptionally well in simple, human-accessible, layman-understandable language — detailing what this part of the system is, why it is important to the application, and how it works so non-technical stakeholders can easily understand it.
-4. REMOVE UNFOUND / MISSING CONTENT: If specific content, tables, diagrams, or subsections requested by placeholders in the template are NOT found in the repository (e.g. no Docker containers, no SQL tables, no CI/CD pipeline configs), REMOVE those empty placeholder tables, unused code blocks, or missing sub-diagrams completely from the final document. Do NOT leave empty tables or placeholder markers for missing features. Simply note cleanly in the section description that the feature is not implemented/present in this repository and remove the empty tables/diagrams.
-5. Replace ONLY the {PLACEHOLDER} markers with real, verified information from the Structured Context.
-6. Badges are MANDATORY on the first line, using the exact pattern from the template.
-7. The Mermaid init line with theme variables must be preserved for any diagrams that remain.
-8. NEVER hallucinate or invent features, endpoints, tables, or architecture not present in the repository context.
-9. Mark anything you must infer from code patterns as "(inferred)" in italics.
-10. Use clean tables over prose for any enumerable data (components, endpoints, features, dependencies).
-11. Cross-reference other documents by name in italics, e.g., "see *Deployment-Guide.md, section 6*".
-12. Voice: formal, clear, human-understandable, and direct. Combine accessible, educational section introductions with precise, clean technical facts.
-13. Output the completed Markdown document ONLY — no preamble, no closing remarks, no wrapping in code fences."""
+═══════════════════════════════════════════════════
+PART A — HANDLING MISSING / UNFOUND CONTEXT (HIGHEST PRIORITY)
+═══════════════════════════════════════════════════
+
+A1. CONTEXT NOT FOUND — TIERED RESPONSE:
+    When the Structured Context does NOT contain information for a template section:
+    • If the feature is IRRELEVANT to this project type (e.g. Docker in a pure library,
+      SQL tables in a static site), write `[NOT APPLICABLE] — <one-line reason>` under
+      the section heading and remove ALL tables, diagrams, and code blocks in that section.
+    • If the feature COULD exist but was not found in the repository scan, write
+      `[MISSING] — searched <what was searched>; not found in repository` and similarly
+      remove all tables, diagrams, and code blocks from that section.
+    • In BOTH cases, keep the section heading (## heading) itself — never delete headings.
+
+A2. REMOVE EMPTY TABLES COMPLETELY:
+    • If a template contains a Markdown table with {{#EACH}} rows but the Structured
+      Context has ZERO items for that loop, DELETE the entire table (header row, separator
+      row, and all placeholder rows). Do NOT output a table with only headers and no data.
+    • If a template section has MULTIPLE tables and only SOME have data, keep the populated
+      tables and delete only the empty ones.
+
+A3. REMOVE EMPTY DIAGRAMS:
+    • If a Mermaid diagram's placeholders cannot be filled because the context lacks the
+      required data (e.g., no lifecycle states, no read/write paths), DELETE the entire
+      ```mermaid ... ``` block and its introductory sentence.
+    • If a diagram CAN be partially filled with real data, keep it and fill what you can.
+
+A4. REMOVE UNFILLED PLACEHOLDERS:
+    • After filling, the final document must contain ZERO raw placeholder markers
+      (no {{PLACEHOLDER}}, no {PLACEHOLDER}, no {{#EACH}}...{{/EACH}} blocks).
+    • Any placeholder that cannot be resolved → apply rule A1 (mark [NOT APPLICABLE]
+      or [MISSING]) and remove the surrounding structure.
+
+═══════════════════════════════════════════════════
+PART B — CONTENT INTEGRITY (NEVER VIOLATE)
+═══════════════════════════════════════════════════
+
+B1. NEVER hallucinate or invent features, endpoints, tables, architecture, or data
+    not present in the Structured Context. If it's not in the context, it does not exist.
+B2. Replace {PLACEHOLDER} markers ONLY with real, verified data from the Structured Context.
+B3. Mark anything you must infer from code patterns as *(inferred)* in italics.
+B4. Cite source files where possible: `path/to/file.ext:L12-L34`.
+B5. Secret names only — never output secret values.
+
+═══════════════════════════════════════════════════
+PART C — STRUCTURE & FORMATTING
+═══════════════════════════════════════════════════
+
+C1. KEEP all main section headings (## headings) in order. Do NOT add, remove, or rename
+    main headings.
+C2. LAYMAN SECTION DESCRIPTIONS (MANDATORY): Under EVERY ## heading that has content,
+    write a rich, formal introductory paragraph (5–10 lines) explaining the topic in
+    plain, layman-understandable language — what this part of the system is, why it
+    matters, and how it works, so non-technical stakeholders can understand it.
+    For sections marked [NOT APPLICABLE] or [MISSING], write 1–2 sentences explaining
+    why instead of the full paragraph.
+C3. Badges are MANDATORY on the first line, using the exact pattern from the template.
+C4. Preserve the Mermaid %%{init:...}%% theme line for any diagrams that remain.
+C5. Use clean tables over prose for any enumerable data (components, endpoints,
+    features, dependencies) — but only when data exists to populate them.
+C6. Cross-reference other documents by name in italics, e.g., "see *Deployment-Guide.md,
+    section 6*".
+C7. Voice: formal, clear, human-understandable, and direct.
+
+═══════════════════════════════════════════════════
+PART D — OUTPUT
+═══════════════════════════════════════════════════
+
+D1. Output the completed Markdown document ONLY — no preamble, no closing remarks,
+    no wrapping in code fences.
+D2. Delete every <!-- FILL: --> and <!-- EXAMPLE --> comment. Keep <!-- ANCHOR: --> comments.
+D3. Target 200–250 lines per document. Cut filler and redundant prose, not substance."""
 
 
 # =====================================================================
@@ -266,15 +324,27 @@ RULES:
 TEMPLATE_FILL_PROMPT = """Fill the following documentation template using the Structured Context provided.
 
 ## Template Rules (from 00-README-How-To-Use.md):
-- Keep main ## headings in order.
-- MANDATORY LAYMAN SECTION DESCRIPTIONS: Immediately following each ## main section heading, write a rich, formal, and clear introductory description paragraph (approx. 5 to 10 lines) in layman-understandable language explaining the heading topic, its purpose, and how it works in plain terms.
-- REMOVE UNFOUND / MISSING CONTENT: If information for specific tables, diagrams, or subsections in the template is NOT found in the repository, REMOVE those empty tables, diagrams, or placeholder blocks from the final document. Do not leave empty rows, unused placeholder structures, or filler tables.
+- Keep all ## headings in order. Never add, remove, or rename them.
+- MANDATORY LAYMAN DESCRIPTIONS: Under every ## heading with data, write a rich, formal
+  introductory paragraph (8–12 lines) in plain, layman-understandable language.
+  For sections marked [NOT APPLICABLE] or [MISSING], write 1–2 explanatory sentences instead.
+- MISSING CONTEXT — TIERED HANDLING:
+  → Feature irrelevant to this project: `[NOT APPLICABLE] — <reason>` + delete all tables/diagrams in that section.
+  → Feature possible but not found: `[MISSING] — searched <what>; not found in repository` + delete tables/diagrams.
+  → In both cases, keep the ## heading — never delete it.
+- REMOVE EMPTY TABLES: If a {{{{#EACH}}}} loop has ZERO items, delete the ENTIRE table
+  (headers + separator + placeholder rows). Never output header-only tables.
+- REMOVE EMPTY DIAGRAMS: If a Mermaid block's placeholders can't be filled, delete the
+  entire ```mermaid ... ``` block and its introductory sentence.
+- ZERO LEFTOVER PLACEHOLDERS: The final document must contain no raw {{{{PLACEHOLDER}}}},
+  {{{{#EACH}}}}, or {{{{/EACH}}}} markers.
 - Badges are MANDATORY on the first line.
-- Color palette is fixed: Primary #2E74B5, Secondary #1F4D78, Accent #0563C1, Tertiary #EAF1FA.
-- Every remaining Mermaid diagram must start with the init line preserving these theme colors.
-- Use clean tables over prose for anything enumerable.
+- Color palette: Primary #2E74B5, Secondary #1F4D78, Accent #0563C1, Tertiary #EAF1FA.
+- Preserve the Mermaid %%{{init:...}}%% theme line for diagrams that remain.
+- Tables for enumerable facts (only when data exists); prose for reasoning.
 - Cross-reference other docs by name in italics instead of duplicating content.
-- Voice: formal, clear, human-understandable explanations for section intros paired with precise technical facts in tables and diagrams.
+- Voice: formal, clear, human-understandable. Cite sources as `path/to/file:L##`.
+- Delete <!-- FILL: --> and <!-- EXAMPLE --> comments. Keep <!-- ANCHOR: --> comments.
 
 ## Project Info:
 - Project Name: {project_name}
@@ -283,11 +353,13 @@ TEMPLATE_FILL_PROMPT = """Fill the following documentation template using the St
 ## Template:
 {template_content}
 
-## Structured Context (use ONLY this data):
+## Structured Context (use ONLY this data — do not invent):
 {structured_context}
 
 ## Output:
-Generate the completed Markdown document. Under every ## heading, include the formal, layman-accessible 5-10 line section description paragraph. Replace all {{PLACEHOLDER}} markers with real data from the Structured Context, and REMOVE any tables, diagrams, or blocks whose content is not found in the repository. Keep all formatting, structure, and Mermaid themes intact."""
+Generate the completed Markdown document. Apply the tiered missing-context rules above:
+remove empty tables, remove unfillable diagrams, mark inapplicable or missing sections,
+and ensure zero raw placeholders remain. Keep all headings, formatting, and Mermaid themes intact."""
 
 
 # =====================================================================
