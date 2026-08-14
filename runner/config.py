@@ -60,10 +60,10 @@ class RunnerConfig:
     TEMPLATES_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "templates")
 
     # Chunking
-    TARGET_CHUNK_TOKENS = 4000
-    MAX_CHUNK_TOKENS = 5000
-    MAX_FILE_TOKENS = 8000  # Token threshold for printing large file token warning
-    TOKEN_CHAR_RATIO = 4  # ~4 chars per token
+    TARGET_CHUNK_TOKENS = int(os.getenv("TARGET_CHUNK_TOKENS", "4000"))
+    MAX_CHUNK_TOKENS = int(os.getenv("MAX_CHUNK_TOKENS", "5000"))
+    MAX_FILE_TOKENS = int(os.getenv("MAX_FILE_TOKENS", "8000"))
+    TOKEN_CHAR_RATIO = int(os.getenv("TOKEN_CHAR_RATIO", "4"))
 
     # File size filtering thresholds
     MAX_FILE_SIZE_SKIP_BYTES = 3 * 1024 * 1024  # 3 MB -> hard skip threshold

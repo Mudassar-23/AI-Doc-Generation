@@ -9,7 +9,6 @@
 ## 1. Executive Verdict
 
 {{EXECUTIVE_VERDICT}}
-
 | Dimension | Rating | Basis |
 |---|:--:|---|
 | Functional / Architecture / Security | {{RATING_FUNCTIONAL}} / {{RATING_ARCHITECTURE}} / {{RATING_SECURITY}} | {{BASIS_FUNCTIONAL}} |
